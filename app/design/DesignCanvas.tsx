@@ -76,6 +76,7 @@ export default function DesignCanvas({
   const guideRectRef = useRef<any>(null);
   const canvasWrapRef = useRef<HTMLDivElement>(null);
   const propertiesBarRef = useRef<HTMLDivElement>(null);
+  const toolRailRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function updateScale() {
@@ -100,13 +101,14 @@ export default function DesignCanvas({
     attachTransformer();
   }, [selectedId, elements]);
 
-  // Click anywhere that isn't the canvas or the properties bar clears the selection.
+  // Click anywhere that isn't the canvas, the properties bar, or the tool rail clears the selection.
   useEffect(() => {
     function handleOutsideClick(e: MouseEvent) {
       const target = e.target as Node;
       const insideCanvas = canvasWrapRef.current?.contains(target);
       const insidePanel = propertiesBarRef.current?.contains(target);
-      if (!insideCanvas && !insidePanel) {
+      const insideRail = toolRailRef.current?.contains(target);
+      if (!insideCanvas && !insidePanel && !insideRail) {
         setSelectedId(null);
       }
     }
@@ -157,7 +159,6 @@ export default function DesignCanvas({
   const capturePrintReady = () => {
     if (!stageRef.current || !guideRectRef.current) return;
 
-    // Hide the guide box and selection handles so neither bakes into the exported file.
     guideRectRef.current.visible(false);
     transformerRef.current?.nodes([]);
     transformerRef.current?.getLayer().batchDraw();
@@ -171,7 +172,6 @@ export default function DesignCanvas({
       pixelRatio: scale > 0 ? 2 / scale : 2,
     });
 
-    // Restore the guide box and whatever was selected.
     guideRectRef.current.visible(true);
     guideRectRef.current.getLayer().batchDraw();
     attachTransformer();
@@ -211,7 +211,7 @@ export default function DesignCanvas({
 
       <div className="workspace-grid">
         {/* Tool rail */}
-        <div className="workspace-rail tool-rail">
+        <div className="workspace-rail tool-rail" ref={toolRailRef}>
           <button className="tool-btn" onClick={addText}>
             <Type size={18} /> Text
           </button>
@@ -339,37 +339,37 @@ export default function DesignCanvas({
           </div>
 
           {selectedEl && (
-  <div className="properties-bar" ref={propertiesBarRef}>
-    <div className="field-group">
-      <span className="panel-label">Color</span>
-      <input
-        type="color" className="swatch"
-        value={selectedEl.fill ?? "#2FA36B"}
-        onChange={(e) => updateElement({ ...selectedEl, fill: e.target.value })}
-      />
-    </div>
-    {selectedEl.type === "text" && (
-      <>
-        <div className="field-group grow">
-          <span className="panel-label">Text</span>
-          <input
-            type="text" className="field"
-            value={selectedEl.text ?? ""}
-            onChange={(e) => updateElement({ ...selectedEl, text: e.target.value })}
-          />
-        </div>
-        <div className="field-group">
-          <span className="panel-label">Size</span>
-          <input
-            type="number" className="field" style={{ width: "70px" }}
-            value={selectedEl.fontSize ?? 28}
-            onChange={(e) => updateElement({ ...selectedEl, fontSize: Number(e.target.value) })}
-          />
-        </div>
-      </>
-    )}
-  </div>
-)}
+            <div className="properties-bar" ref={propertiesBarRef}>
+              <div className="field-group">
+                <span className="panel-label">Color</span>
+                <input
+                  type="color" className="swatch"
+                  value={selectedEl.fill ?? "#2FA36B"}
+                  onChange={(e) => updateElement({ ...selectedEl, fill: e.target.value })}
+                />
+              </div>
+              {selectedEl.type === "text" && (
+                <>
+                  <div className="field-group grow">
+                    <span className="panel-label">Text</span>
+                    <input
+                      type="text" className="field"
+                      value={selectedEl.text ?? ""}
+                      onChange={(e) => updateElement({ ...selectedEl, text: e.target.value })}
+                    />
+                  </div>
+                  <div className="field-group">
+                    <span className="panel-label">Size</span>
+                    <input
+                      type="number" className="field" style={{ width: "70px" }}
+                      value={selectedEl.fontSize ?? 28}
+                      onChange={(e) => updateElement({ ...selectedEl, fontSize: Number(e.target.value) })}
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+          )}
 
           {!selectedEl && !printPreview && (
             <p className="empty-hint">Select an element on the shirt to edit its color, text, or size.</p>
