@@ -3,6 +3,14 @@ import type { NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/proxy";
 
 export async function proxy(request: NextRequest) {
+  const missing = ["NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY"].filter((name) => !process.env[name]);
+  if (missing.length > 0) {
+    // Say exactly what is wrong instead of a blank "Internal Server Error".
+    return new Response(`Nova Edge is not configured yet. Missing environment variables: ${missing.join(", ")}. Add them in Vercel -> Settings -> Environment Variables, then redeploy.`, {
+      status: 500,
+      headers: { "content-type": "text/plain; charset=utf-8" },
+    });
+  }
   return updateSession(request);
 }
 
