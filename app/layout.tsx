@@ -6,18 +6,18 @@ import "./globals.css";
 const display = Bricolage_Grotesque({
   variable: "--font-display",
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
+  weight: ["500", "600", "700", "800"],
 });
 
 const body = IBM_Plex_Sans({
   variable: "--font-body",
   subsets: ["latin"],
-  weight: ["400", "500"],
+  weight: ["400", "500", "600"],
 });
 
 export const metadata: Metadata = {
-  title: "Nova Edge — Design Your Own",
-  description: "Custom graphic tees and hoodies, made your way.",
+  title: { default: "Nova Edge · Wear the punchline", template: "%s" },
+  description: "Tech humor and Naija wit on tees and hoodies. Buy ready-made or design your own, printed on demand.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
