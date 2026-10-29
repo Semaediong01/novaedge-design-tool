@@ -4,7 +4,7 @@ import { getProducts } from "@/lib/products";
 import ProductCard from "@/components/ProductCard";
 
 // Launch range: T-shirts and caps only. Add categories here when new product lines go live.
-const LAUNCH_CATEGORIES = ["T-Shirts", "Caps"] as const;
+const LAUNCH_CATEGORIES = ["T-Shirts"] as const;
 
 export const metadata = { title: "Shop · Nova Edge" };
 

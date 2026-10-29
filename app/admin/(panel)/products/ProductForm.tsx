@@ -82,7 +82,7 @@ export default function ProductForm({ product }: { product?: Product }) {
         <h2>Details</h2>
         <label className="field-group">
           <span className="panel-label">Product name</span>
-          <input className="field" name="title" required defaultValue={product?.title} placeholder="My Laptop's Down" />
+          <input className="field" name="title" required defaultValue={product?.title} placeholder="Classic tee, white" />
         </label>
         <label className="field-group">
           <span className="panel-label">Description</span>

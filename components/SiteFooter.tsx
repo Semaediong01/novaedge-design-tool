@@ -10,13 +10,12 @@ export default function SiteFooter() {
           <Link href="/" aria-label="Nova Edge Clothing, home">
             <Image className="footer-logo" src="/brand/novaedge-logo-white.png" alt="Nova Edge Clothing" width={696} height={431} />
           </Link>
-          <p className="footer-note">Tech humor and Naija wit, printed on demand and shipped to you.</p>
+          <p className="footer-note">Premium plain tees, printed on demand and shipped to you.</p>
         </div>
         <div>
           <h3>Shop</h3>
           <Link href="/shop">All products</Link>
           <Link href="/shop?category=T-Shirts">T-shirts</Link>
-          <Link href="/shop?category=Caps">Caps</Link>
           <Link href="/shop?custom=1">Design your own</Link>
         </div>
         <div>

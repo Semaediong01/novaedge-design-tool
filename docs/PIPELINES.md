@@ -5,8 +5,8 @@ Four pipelines, built strictly one at a time: finish one, get Sema's confirmatio
 READ FIRST: AGENTS.md says this Next.js version has breaking changes. Check `node_modules/next/dist/docs/` for anything you are unsure about before writing code. Run `npm install` in your worktree first.
 
 ## Brand (all pipelines)
-- Brand green (sampled from the logo): **#365532**. Black: **#030302**. White: #FFFFFF.
-- The old greens (#2FA36B, #4FD98C, #1c5c3e) were WRONG and must not remain anywhere. Derive tints/shades from #365532 only (e.g. hover #2B4528, light tint #EAF0E8, soft border #D5DFD2).
+- Brand green (sampled from the logo): **#2C4A29** (deepened Oct 29; the logo itself samples at #365532). Black: **#030302**. White: #FFFFFF.
+- The old greens (#2FA36B, #4FD98C, #1c5c3e) were WRONG and must not remain anywhere. Derive tints/shades from #365532 only (e.g. hover #213A20, light tint #E6EEE4, soft border #D0DDCD. Dark mode lives in `app/globals.css` under `:root[data-theme="dark"]`).
 - Logo files in `public/brand/`: `ne-monogram*.png` (symbol) and `novaedge-logo*.png` (full logo with NOVAEDGE CLOTHING). Variants: default = green, `-white`, `-black`, all transparent PNG.
 - Store look: bright, light theme (white background, black text, green accents), inspired by Zazzle and TeePublic. Fonts already wired: Bricolage Grotesque (display) and IBM Plex Sans (body).
 - Launch products: T-shirts (white, black, ash) and caps. Every garment carries a small NE symbol on the left chest by default; customers can remove, enlarge or move it.

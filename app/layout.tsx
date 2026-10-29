@@ -16,13 +16,19 @@ const body = IBM_Plex_Sans({
 });
 
 export const metadata: Metadata = {
-  title: { default: "Nova Edge · Wear the punchline", template: "%s" },
-  description: "Tech humor and Naija wit on tees and caps. Buy ready-made or design your own, printed on demand.",
+  title: { default: "Nova Edge Clothing", template: "%s" },
+  description: "Premium plain tees with the Nova Edge symbol, or without it. Add your own design and we print it on demand.",
 };
+
+const THEME_SCRIPT = `(function(){var t="light";try{if(localStorage.getItem("ne-theme")==="dark")t="dark"}catch(e){}document.documentElement.setAttribute("data-theme",t)})()`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Sets the theme before first paint so there is no flash. Light unless the visitor chose dark. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body className={`${display.variable} ${body.variable}`}>{children}</body>
     </html>
   );

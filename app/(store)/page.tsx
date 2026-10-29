@@ -13,16 +13,16 @@ export default async function HomePage() {
       <section className="hero">
         <div className="container hero-grid">
           <div className="hero-copy">
-            <p className="eyebrow">Tech humor · Naija wit</p>
+            <p className="eyebrow">Nova Edge Clothing</p>
             <h1 className="hero-title">
-              Wear the <em>punchline.</em>
+              Plain tees. <em>Made yours.</em>
             </h1>
             <p className="hero-sub">
-              Tees and caps for people who live in group chats, load-shedding and stack traces. Buy a design we made, or make your own.
+              Premium tees in white, black and ash, with the Nova Edge symbol or without it. Keep it clean, or add your own design and we print it on demand.
             </p>
             <div className="hero-cta">
               <Link href="/shop" className="btn btn-lg">
-                Shop the drop
+                Shop tees
               </Link>
               <Link href="/shop?custom=1" className="btn btn-lg btn-ghost">
                 Design your own
@@ -34,9 +34,7 @@ export default async function HomePage() {
             <Image className="hero-mark" src="/brand/ne-monogram-white.png" alt="" width={389} height={328} />
             <div className="hero-tee">
               <div className="hero-tee-print">
-                <span>Network</span>
-                <span>no dey</span>
-                <span className="hero-tee-small">but we dey</span>
+                <Image className="hero-tee-symbol" src="/brand/ne-monogram-white.png" alt="" width={389} height={328} />
               </div>
             </div>
           </div>
@@ -48,8 +46,8 @@ export default async function HomePage() {
           <div className="value-item">
             <Shirt size={26} aria-hidden />
             <div>
-              <strong>Ready-made or custom</strong>
-              <span>Shop our designs or make your own</span>
+              <strong>Plain or personalized</strong>
+              <span>Wear it clean, or add your own design</span>
             </div>
           </div>
           <div className="value-item">
@@ -71,7 +69,7 @@ export default async function HomePage() {
 
       <section className="container section">
         <div className="section-head">
-          <h2>Fresh off the press</h2>
+          <h2>The tees</h2>
           <Link href="/shop" className="text-link">
             See everything
           </Link>
@@ -83,7 +81,7 @@ export default async function HomePage() {
             ))}
           </div>
         ) : (
-          <p className="empty-state">New designs are on the way. Check back soon.</p>
+          <p className="empty-state">Our tees are on the way. Check back soon.</p>
         )}
       </section>
 
@@ -93,10 +91,10 @@ export default async function HomePage() {
           <h2>Your idea, on a tee, in three steps</h2>
           <ol className="steps">
             <li>
-              <strong>Pick a piece.</strong> Choose a tee or cap in your size and color.
+              <strong>Pick your tee.</strong> Choose white, black or ash in your size.
             </li>
             <li>
-              <strong>Add your art.</strong> Drop in text, shapes or your own image and move it around on the garment.
+              <strong>Make it yours.</strong> Keep the Nova Edge symbol, move it, or remove it. Add text, shapes or your own image.
             </li>
             <li>
               <strong>We print and ship.</strong> Your design is printed on demand and delivered to your door. Customizing costs nothing extra.

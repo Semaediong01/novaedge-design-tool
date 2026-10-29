@@ -27,7 +27,7 @@ type Props = {
 
 const LOGICAL_SIZE = 500;
 const PRINT_AREA = { x: 100, y: 85, width: 300, height: 365 };
-const DEFAULT_FILL = "#365532";
+const DEFAULT_FILL = "#2C4A29";
 
 function clampDrag(this: any, pos: { x: number; y: number }) {
   const node = this;
@@ -389,17 +389,17 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
                   <Rect
                     ref={guideRectRef}
                     x={PRINT_AREA.x} y={PRINT_AREA.y} width={PRINT_AREA.width} height={PRINT_AREA.height}
-                    stroke="#365532" strokeWidth={1.5} dash={[7, 5]}
+                    stroke="#2C4A29" strokeWidth={1.5} dash={[7, 5]}
                     listening={false}
                   />
 
                   <Transformer
                     ref={transformerRef}
-                    anchorStroke="#365532"
+                    anchorStroke="#2C4A29"
                     anchorFill="#FFFFFF"
                     anchorSize={9}
                     anchorCornerRadius={4}
-                    borderStroke="#365532"
+                    borderStroke="#2C4A29"
                     borderDash={[5, 4]}
                     borderStrokeWidth={1.5}
                     rotateAnchorOffset={24}
