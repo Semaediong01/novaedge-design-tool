@@ -5,11 +5,11 @@ import { getUser } from "@/lib/auth";
 import CartLink from "./CartLink";
 import BrandLogo from "./BrandLogo";
 import ThemeToggle from "./ThemeToggle";
-import { getActiveCategories } from "@/lib/categories";
+import { getShopSections } from "@/lib/categories";
 
 export default async function SiteHeader() {
   const user = await getUser();
-  const categories = await getActiveCategories();
+  const sections = await getShopSections();
 
   return (
     <>
@@ -56,9 +56,10 @@ export default async function SiteHeader() {
 
       <nav className="category-nav" aria-label="Shop by category">
         <Link href="/shop">All</Link>
-        {categories.map((c) => (
-          <Link key={c} href={`/shop?category=${encodeURIComponent(c)}`}>
-            {c}
+        {sections.map((s) => (
+          <Link key={s.name} href={`/shop?category=${encodeURIComponent(s.name)}`}>
+            {s.name}
+            {s.count === 0 && <span className="soon-tag">Soon</span>}
           </Link>
         ))}
         <Link href="/shop?custom=1" className="category-nav-accent">

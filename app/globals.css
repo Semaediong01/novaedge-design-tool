@@ -1,7 +1,7 @@
-/* app/globals.css — Nova Edge. Bright and clean by default, with a dark mode. Brand green: #2c4a29 */
+/* app/globals.css — Nova Edge. Bright and clean by default, with a dark mode. Brand green: #1e3a1c */
 /* Theme tokens. Light is the default; the toggle in the header sets data-theme="dark" on <html>. */
 :root {
-  --brand: #2c4a29;        /* deeper logo green, never changes between themes */
+  --brand: #1e3a1c;        /* deep logo green, never changes between themes */
   --black: #030302;
   --white: #ffffff;        /* constant white, used for text on green fills */
 
@@ -12,13 +12,13 @@
   --muted: #5d685a;
   --line: #e3e8e1;
 
-  --green: #2c4a29;        /* fills: buttons, tags, active chips */
-  --green-deep: #213a20;   /* hover on fills */
-  --accent: #2c4a29;       /* green used as text, links and icons */
-  --green-line: #d0ddcd;
+  --green: #1e3a1c;        /* fills: buttons, tags, active chips */
+  --green-deep: #142a13;   /* hover on fills */
+  --accent: #1e3a1c;       /* green used as text, links and icons */
+  --green-line: #cfdccb;
   --green-light: #b3cbae;  /* text on dark green bands */
-  --mint: #e6eee4;         /* light green tint surface */
-  --band: #2c4a29;         /* big green sections */
+  --mint: #e4ede2;         /* light green tint surface */
+  --band: #1b2d19;         /* big green sections, as deep as in dark mode */
 
   --header-bg: rgba(255, 255, 255, 0.96);
   --danger: #b42318;
@@ -185,8 +185,13 @@ button, input, select, textarea { font-family: inherit; font-size: inherit; }
 .category-nav a { text-decoration: none; font-weight: 500; font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text); padding: 0.25rem 0; border-bottom: 2px solid transparent; }
 .category-nav a:hover { border-bottom-color: var(--green); color: var(--accent); }
 .category-nav-accent { color: var(--accent) !important; font-weight: 700 !important; }
+.soon-tag { display: inline-block; margin-left: 0.4rem; padding: 0.05rem 0.4rem; border-radius: 999px; background: var(--mint); color: var(--accent); font-size: 0.62rem; letter-spacing: 0.08em; font-weight: 600; vertical-align: 1px; }
+.chip .soon-tag { margin-left: 0.5rem; font-size: 0.65rem; }
+.chip.active .soon-tag { background: rgba(255, 255, 255, 0.2); color: var(--white); }
+.footer-grid .soon-tag { background: rgba(255, 255, 255, 0.1); color: #cfd6cc; }
 
 @media (max-width: 760px) {
+  .category-nav { gap: 1.25rem; padding-right: 2.5rem; -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 2.5rem), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 2.5rem), transparent); }
   .header-inner { grid-template-columns: 1fr auto; gap: 0.75rem; }
   .header-search { grid-column: 1 / -1; grid-row: 2; max-width: none; }
   .brand img { height: 30px; }
@@ -443,3 +448,12 @@ textarea.field { resize: vertical; }
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }
+
+/* ---------- Coming soon (empty shop sections) ---------- */
+.coming-soon { position: relative; overflow: hidden; text-align: center; background: var(--soft); border: 1px solid var(--line); border-radius: 24px; padding: clamp(2.5rem, 8vw, 5rem) 1.5rem; display: flex; flex-direction: column; align-items: center; }
+.coming-soon-mark { position: absolute; right: -4%; bottom: -14%; width: min(46%, 320px); height: auto; opacity: 0.07; pointer-events: none; }
+:root[data-theme="dark"] .coming-soon-mark { filter: brightness(2.2); }
+.coming-soon > :not(.coming-soon-mark) { position: relative; }
+.coming-soon h2 { font-size: clamp(1.8rem, 5vw, 3rem); }
+.coming-soon .lede { margin: 1rem auto 1.75rem; }
+.coming-soon .hero-cta { justify-content: center; }

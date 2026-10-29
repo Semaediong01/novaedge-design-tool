@@ -2,10 +2,10 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { getActiveCategories } from "@/lib/categories";
+import { getShopSections } from "@/lib/categories";
 
 export default async function SiteFooter() {
-  const categories = await getActiveCategories();
+  const sections = await getShopSections();
   return (
     <footer className="site-footer">
       <div className="container footer-grid">
@@ -18,9 +18,10 @@ export default async function SiteFooter() {
         <div>
           <h3>Shop</h3>
           <Link href="/shop">All products</Link>
-          {categories.map((c) => (
-            <Link key={c} href={`/shop?category=${encodeURIComponent(c)}`}>
-              {c}
+          {sections.map((s) => (
+            <Link key={s.name} href={`/shop?category=${encodeURIComponent(s.name)}`}>
+              {s.name}
+              {s.count === 0 && <span className="soon-tag">Soon</span>}
             </Link>
           ))}
           <Link href="/shop?custom=1">Design your own</Link>
