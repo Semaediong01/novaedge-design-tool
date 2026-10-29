@@ -1,6 +1,7 @@
 // components/AuthForm.tsx — customer email/password + Google sign in and sign up
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -67,6 +68,9 @@ export default function AuthForm({ mode, next }: { mode: "login" | "signup"; nex
 
   return (
     <div className="auth-card">
+      <Link href="/" aria-label="Nova Edge Clothing, home">
+        <Image className="auth-logo" src="/brand/novaedge-logo.png" alt="Nova Edge Clothing" width={696} height={431} />
+      </Link>
       <h1>{isLogin ? "Welcome back" : "Create your account"}</h1>
       <p className="auth-sub">{isLogin ? "Log in to check out and track your orders." : "You need an account to place an order."}</p>
 

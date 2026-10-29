@@ -17,7 +17,7 @@ const body = IBM_Plex_Sans({
 
 export const metadata: Metadata = {
   title: { default: "Nova Edge · Wear the punchline", template: "%s" },
-  description: "Tech humor and Naija wit on tees and hoodies. Buy ready-made or design your own, printed on demand.",
+  description: "Tech humor and Naija wit on tees and caps. Buy ready-made or design your own, printed on demand.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

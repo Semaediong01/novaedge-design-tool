@@ -2,22 +2,29 @@
 import Link from "next/link";
 import { Search } from "lucide-react";
 import { getUser } from "@/lib/auth";
-import { CATEGORIES } from "@/lib/types";
 import CartLink from "./CartLink";
+import BrandLogo from "./BrandLogo";
+
+// Launch range: T-shirts and caps only. Add categories here when new product lines go live.
+const LAUNCH_CATEGORIES = ["T-Shirts", "Caps"] as const;
 
 export default async function SiteHeader() {
   const user = await getUser();
 
   return (
+    <>
+    <div className="announce">
+      <span>Customizing costs nothing extra</span>
+      <span>Printed on demand</span>
+      <span>Secure payment with Paystack</span>
+    </div>
     <header className="site-header">
       <div className="header-inner">
-        <Link href="/" className="wordmark">
-          NOVA<span>EDGE</span>
-        </Link>
+        <BrandLogo />
 
         <form action="/shop" className="header-search" role="search">
           <Search size={16} aria-hidden />
-          <input type="search" name="q" placeholder="Search tees, hoodies, punchlines" aria-label="Search products" />
+          <input type="search" name="q" placeholder="Search tees, caps, punchlines" aria-label="Search products" />
         </form>
 
         <div className="header-actions">
@@ -34,7 +41,7 @@ export default async function SiteHeader() {
             </>
           ) : (
             <>
-              <Link href="/login" className="header-link">
+              <Link href="/login" className="header-link header-login">
                 Log in
               </Link>
               <Link href="/signup" className="btn btn-sm">
@@ -48,7 +55,7 @@ export default async function SiteHeader() {
 
       <nav className="category-nav" aria-label="Shop by category">
         <Link href="/shop">All</Link>
-        {CATEGORIES.map((c) => (
+        {LAUNCH_CATEGORIES.map((c) => (
           <Link key={c} href={`/shop?category=${encodeURIComponent(c)}`}>
             {c}
           </Link>
@@ -58,5 +65,6 @@ export default async function SiteHeader() {
         </Link>
       </nav>
     </header>
+    </>
   );
 }

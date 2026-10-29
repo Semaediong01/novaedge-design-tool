@@ -1,8 +1,10 @@
 // app/(store)/shop/page.tsx
 import Link from "next/link";
 import { getProducts } from "@/lib/products";
-import { CATEGORIES } from "@/lib/types";
 import ProductCard from "@/components/ProductCard";
+
+// Launch range: T-shirts and caps only. Add categories here when new product lines go live.
+const LAUNCH_CATEGORIES = ["T-Shirts", "Caps"] as const;
 
 export const metadata = { title: "Shop · Nova Edge" };
 
@@ -30,7 +32,7 @@ export default async function ShopPage({
         <Link href="/shop" className={`chip${!category && !custom ? " active" : ""}`}>
           All
         </Link>
-        {CATEGORIES.map((c) => (
+        {LAUNCH_CATEGORIES.map((c) => (
           <Link key={c} href={`/shop?category=${encodeURIComponent(c)}`} className={`chip${category === c ? " active" : ""}`}>
             {c}
           </Link>

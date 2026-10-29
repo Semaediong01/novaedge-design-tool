@@ -1,6 +1,6 @@
 # Nova Edge build: pipelines and shared contract
 
-Four pipelines run in parallel, each in its own git worktree and branch. Each one only edits the files it owns. Anything outside your list: do not touch it; if you need a change there, say so in your final report.
+Four pipelines, built strictly one at a time: finish one, get Sema's confirmation, deploy, then start the next. Each only edits the files it owns. Anything outside your list: do not touch it unless the pipeline needs it, and say so in the report.
 
 READ FIRST: AGENTS.md says this Next.js version has breaking changes. Check `node_modules/next/dist/docs/` for anything you are unsure about before writing code. Run `npm install` in your worktree first.
 
