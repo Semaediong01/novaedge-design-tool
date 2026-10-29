@@ -30,7 +30,7 @@ export default async function SiteHeader() {
         <div className="header-actions">
           {user ? (
             <>
-              <Link href="/orders" className="header-link">
+              <Link href="/orders" className="header-link header-orders">
                 My orders
               </Link>
               <form action="/auth/signout" method="post">

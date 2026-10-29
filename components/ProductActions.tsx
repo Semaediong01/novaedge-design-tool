@@ -5,19 +5,32 @@ import Link from "next/link";
 import { useState } from "react";
 import { Check, Paintbrush, ShoppingBag } from "lucide-react";
 import { useCart } from "./CartProvider";
+import { productImage } from "@/lib/mockups";
 import type { Product } from "@/lib/types";
 
-export default function ProductActions({ product }: { product: Product }) {
+type Props = {
+  product: Product;
+  /** Optional: let the page own the colour so its photos can follow it. */
+  color?: string;
+  onColorChange?: (color: string) => void;
+};
+
+export default function ProductActions({ product, color: controlledColor, onColorChange }: Props) {
   const { addLine } = useCart();
   const [size, setSize] = useState(product.sizes[0] ?? "");
-  const [color, setColor] = useState(product.colors[0] ?? "");
+  const [ownColor, setOwnColor] = useState(product.colors[0] ?? "");
+  const color = controlledColor ?? ownColor;
+  const setColor = (c: string) => {
+    setOwnColor(c);
+    onColorChange?.(c);
+  };
   const [added, setAdded] = useState(false);
 
   const handleAdd = () => {
     addLine({
       productId: product.id,
       title: product.title,
-      image: product.images[0] ?? null,
+      image: productImage(product, color),
       price: product.price,
       size,
       color,

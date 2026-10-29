@@ -192,7 +192,7 @@ button, input, select, textarea { font-family: inherit; font-size: inherit; }
   .brand img { height: 30px; }
 }
 @media (max-width: 480px) {
-  .header-login { display: none; }
+  .header-login, .header-orders { display: none; }
   .brand-word { letter-spacing: 0.2em; font-size: 0.9rem; }
   .header-actions { gap: 0.5rem; }
   .header-link, .btn-sm { white-space: nowrap; }
