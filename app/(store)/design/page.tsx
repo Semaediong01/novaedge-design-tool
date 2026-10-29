@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { getProduct } from "@/lib/products";
 import { createClient } from "@/lib/supabase/server";
+import { usesTeeMockup } from "@/lib/mockups";
 import DesignCanvas from "./DesignCanvas";
 
 export const metadata = { title: "Designer · Nova Edge" };
@@ -32,7 +33,8 @@ export default async function DesignPage({
   }
 
   const product = await getProduct(productId);
-  if (!product || !product.customizable || !product.images[0]) notFound();
+  const mockup = product ? usesTeeMockup(product) : false;
+  if (!product || !product.customizable || (!mockup && !product.images[0])) notFound();
 
   let initialDesign = null;
   if (designId) {
@@ -64,7 +66,8 @@ export default async function DesignPage({
       product={{
         id: product.id,
         title: product.title,
-        image: product.images[0],
+        image: mockup ? null : product.images[0],
+        mockup,
         price: product.price,
         sizes: product.sizes,
         colors: product.colors,

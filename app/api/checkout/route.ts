@@ -3,6 +3,7 @@ import crypto from "node:crypto";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { initializeTransaction } from "@/lib/paystack";
+import { productImage } from "@/lib/mockups";
 
 type Item = { productId: string; size: string; color: string; quantity: number; designId: string | null };
 
@@ -63,7 +64,7 @@ export async function POST(req: Request) {
     rows.push({
       product_id: product.id,
       title: product.title,
-      image: product.images?.[0] ?? null,
+      image: productImage(product, text(item.color, 40)) ?? null,
       size: text(item.size, 20) || null,
       color: text(item.color, 40) || null,
       quantity: design ? 1 : quantity,

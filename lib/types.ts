@@ -1,5 +1,6 @@
 // lib/types.ts
-export const CATEGORIES = ["T-Shirts", "Hoodies", "Sweatshirts", "Joggers", "Caps", "Accessories"] as const;
+// Every category the admin can put a product in.
+export const CATEGORIES = ["T-Shirts", "Hoodies", "Joggers", "Caps", "Casuals", "Sweatshirts", "Accessories"] as const;
 
 export const ORDER_STATUSES = ["pending", "paid", "printing", "shipped", "delivered", "cancelled"] as const;
 export type OrderStatus = (typeof ORDER_STATUSES)[number];

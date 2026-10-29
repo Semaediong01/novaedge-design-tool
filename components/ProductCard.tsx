@@ -1,15 +1,17 @@
 // components/ProductCard.tsx
 import Link from "next/link";
 import { naira } from "@/lib/format";
+import { productImage } from "@/lib/mockups";
 import type { Product } from "@/lib/types";
 
 export default function ProductCard({ product }: { product: Product }) {
+  const image = productImage(product, product.colors[0]);
   return (
     <Link href={`/product/${product.id}`} className="product-card">
       <div className="product-thumb">
-        {product.images[0] ? (
+        {image ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={product.images[0]} alt={product.title} loading="lazy" />
+          <img src={image} alt={product.title} loading="lazy" />
         ) : (
           <span className="product-thumb-empty">No photo yet</span>
         )}

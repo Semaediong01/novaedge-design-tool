@@ -67,7 +67,8 @@ export async function saveProduct(_prev: FormState, formData: FormData): Promise
   await requireAdmin();
   const parsed = readProduct(formData);
   if ("error" in parsed) return { error: parsed.error };
-  if (parsed.values.customizable && parsed.values.images.length === 0) {
+  // T-shirts without a photo use the built-in realistic mockups, so only other products need a photo.
+  if (parsed.values.customizable && parsed.values.images.length === 0 && parsed.values.category !== "T-Shirts") {
     return { error: "Add at least one photo. Customizable products use the first photo in the designer." };
   }
 
