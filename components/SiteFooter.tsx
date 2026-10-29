@@ -2,7 +2,10 @@
 import Image from "next/image";
 import Link from "next/link";
 
-export default function SiteFooter() {
+import { getActiveCategories } from "@/lib/categories";
+
+export default async function SiteFooter() {
+  const categories = await getActiveCategories();
   return (
     <footer className="site-footer">
       <div className="container footer-grid">
@@ -10,12 +13,16 @@ export default function SiteFooter() {
           <Link href="/" aria-label="Nova Edge Clothing, home">
             <Image className="footer-logo" src="/brand/novaedge-logo-white.png" alt="Nova Edge Clothing" width={696} height={431} />
           </Link>
-          <p className="footer-note">Premium plain tees, printed on demand and shipped to you.</p>
+          <p className="footer-note">Premium everyday clothing, printed on demand and shipped to you.</p>
         </div>
         <div>
           <h3>Shop</h3>
           <Link href="/shop">All products</Link>
-          <Link href="/shop?category=T-Shirts">T-shirts</Link>
+          {categories.map((c) => (
+            <Link key={c} href={`/shop?category=${encodeURIComponent(c)}`}>
+              {c}
+            </Link>
+          ))}
           <Link href="/shop?custom=1">Design your own</Link>
         </div>
         <div>

@@ -15,14 +15,14 @@ export default async function HomePage() {
           <div className="hero-copy">
             <p className="eyebrow">Nova Edge Clothing</p>
             <h1 className="hero-title">
-              Plain tees. <em>Made yours.</em>
+              Made to wear. <em>Made yours.</em>
             </h1>
             <p className="hero-sub">
-              Premium tees in white, black and ash, with the Nova Edge symbol or without it. Keep it clean, or add your own design and we print it on demand.
+              Premium everyday pieces with the Nova Edge symbol, or without it. Start clean, add your own design, and we print it on demand.
             </p>
             <div className="hero-cta">
               <Link href="/shop" className="btn btn-lg">
-                Shop tees
+                Shop now
               </Link>
               <Link href="/shop?custom=1" className="btn btn-lg btn-ghost">
                 Design your own
@@ -69,7 +69,7 @@ export default async function HomePage() {
 
       <section className="container section">
         <div className="section-head">
-          <h2>The tees</h2>
+          <h2>Shop the collection</h2>
           <Link href="/shop" className="text-link">
             See everything
           </Link>
@@ -81,20 +81,20 @@ export default async function HomePage() {
             ))}
           </div>
         ) : (
-          <p className="empty-state">Our tees are on the way. Check back soon.</p>
+          <p className="empty-state">New pieces are on the way. Check back soon.</p>
         )}
       </section>
 
       <section className="steps-band">
         <div className="container">
           <p className="eyebrow">Design your own</p>
-          <h2>Your idea, on a tee, in three steps</h2>
+          <h2>Your idea, on your clothes, in three steps</h2>
           <ol className="steps">
             <li>
-              <strong>Pick your tee.</strong> Choose white, black or ash in your size.
+              <strong>Pick your piece.</strong> Choose your style, color and size.
             </li>
             <li>
-              <strong>Make it yours.</strong> Keep the Nova Edge symbol, move it, or remove it. Add text, shapes or your own image.
+              <strong>Make it yours.</strong> Keep the Nova Edge symbol, resize it, or remove it. Add text, shapes or your own image.
             </li>
             <li>
               <strong>We print and ship.</strong> Your design is printed on demand and delivered to your door. Customizing costs nothing extra.

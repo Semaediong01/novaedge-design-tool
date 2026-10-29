@@ -5,12 +5,11 @@ import { getUser } from "@/lib/auth";
 import CartLink from "./CartLink";
 import BrandLogo from "./BrandLogo";
 import ThemeToggle from "./ThemeToggle";
-
-// Launch range: T-shirts and caps only. Add categories here when new product lines go live.
-const LAUNCH_CATEGORIES = ["T-Shirts"] as const;
+import { getActiveCategories } from "@/lib/categories";
 
 export default async function SiteHeader() {
   const user = await getUser();
+  const categories = await getActiveCategories();
 
   return (
     <>
@@ -25,7 +24,7 @@ export default async function SiteHeader() {
 
         <form action="/shop" className="header-search" role="search">
           <Search size={16} aria-hidden />
-          <input type="search" name="q" placeholder="Search tees" aria-label="Search products" />
+          <input type="search" name="q" placeholder="Search products" aria-label="Search products" />
         </form>
 
         <div className="header-actions">
@@ -57,7 +56,7 @@ export default async function SiteHeader() {
 
       <nav className="category-nav" aria-label="Shop by category">
         <Link href="/shop">All</Link>
-        {LAUNCH_CATEGORIES.map((c) => (
+        {categories.map((c) => (
           <Link key={c} href={`/shop?category=${encodeURIComponent(c)}`}>
             {c}
           </Link>
