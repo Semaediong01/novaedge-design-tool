@@ -21,11 +21,11 @@ on conflict (name) do nothing;
 -- Store wording (edit in Admin -> Store content)
 insert into public.site_settings (key, value) values
   ('content', '{
-    "announcements": ["Customizing costs nothing extra", "Delivered to your door", "Secure payment with Paystack"],
+    "announcements": ["Customizing costs nothing extra", "Delivered to you", "Secure payment with Paystack"],
     "hero_eyebrow": "Nova Edge Clothing",
     "hero_title": "Made to wear.",
     "hero_accent": "Made yours.",
-    "hero_sub": "Premium everyday pieces, made to be yours. Start clean, add your own design, and we deliver it to your door.",
+    "hero_sub": "Premium everyday pieces, made to be yours. Start clean, add your own design, and we deliver it to you.",
     "footer_tagline": "Premium everyday clothing, delivered to you.",
     "contact_email": "",
     "contact_phone": "",

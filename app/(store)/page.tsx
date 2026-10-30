@@ -103,7 +103,7 @@ export default async function HomePage() {
               <strong>Make it yours.</strong> Keep the Nova Edge symbol, resize it, or remove it. Add text, shapes or your own image.
             </li>
             <li>
-              <strong>We deliver it.</strong> We make your piece and bring it to your door. Customizing costs nothing extra.
+              <strong>We deliver it.</strong> We make your piece and bring it to you. Customizing costs nothing extra.
             </li>
           </ol>
           <Link href="/shop?custom=1" className="btn btn-lg btn-light">
