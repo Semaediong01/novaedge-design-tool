@@ -465,3 +465,40 @@ textarea.field { resize: vertical; }
 .coming-soon h2 { font-size: clamp(1.8rem, 5vw, 3rem); }
 .coming-soon .lede { margin: 1rem auto 1.75rem; }
 .coming-soon .hero-cta { justify-content: center; }
+
+/* ---------- Tech touches: blueprint hero, terminal line, mono labels ---------- */
+:root { --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace; }
+.eyebrow-tech::before { content: "// "; opacity: 0.55; }
+.steps-band .eyebrow::before { content: "// "; opacity: 0.55; }
+
+.term { display: flex; align-items: center; gap: 0.6rem; font-family: var(--mono); font-size: 0.95rem; color: var(--accent); margin: -0.75rem 0 1.75rem; min-height: 1.5em; flex-wrap: wrap; }
+.term-prompt { color: var(--muted); }
+.term-caret { display: inline-block; width: 0.55em; height: 1.1em; background: var(--accent); margin-left: -0.35rem; animation: term-blink 1s steps(1) infinite; }
+@keyframes term-blink { 50% { opacity: 0; } }
+
+/* Blueprint grid behind the hero tee, with corner readouts and a slow scan line */
+.hero-stage { isolation: isolate; }
+.hero-stage::after {
+  content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+  background-size: 28px 28px;
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 30%, transparent 78%);
+  mask-image: radial-gradient(circle at 50% 50%, #000 30%, transparent 78%);
+}
+.hero-tee { z-index: 1; }
+.hud { position: absolute; z-index: 2; font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.12em; color: rgba(255, 255, 255, 0.72); padding: 0.9rem 1rem; }
+.hud::before { content: ""; position: absolute; width: 14px; height: 14px; border: 0 solid rgba(255, 255, 255, 0.55); }
+.hud-tl { top: 0; left: 0; } .hud-tl::before { top: 0; left: 0; border-width: 2px 0 0 2px; }
+.hud-tr { top: 0; right: 0; } .hud-tr::before { top: 0; right: 0; border-width: 2px 2px 0 0; }
+.hud-bl { bottom: 0; left: 0; } .hud-bl::before { bottom: 0; left: 0; border-width: 0 0 2px 2px; }
+.hud-br { bottom: 0; right: 0; } .hud-br::before { bottom: 0; right: 0; border-width: 0 2px 2px 0; }
+.hud-br { color: var(--green-light); }
+.hero-scan {
+  position: absolute; left: 0; right: 0; height: 90px; z-index: 1; pointer-events: none; top: -90px;
+  background: linear-gradient(to bottom, transparent, rgba(159, 202, 152, 0.22), transparent);
+  border-bottom: 1px solid rgba(159, 202, 152, 0.45);
+  animation: hero-scan 5.5s ease-in-out infinite;
+}
+@keyframes hero-scan { 0% { top: -90px; opacity: 0; } 12% { opacity: 1; } 88% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .hero-scan { display: none; } .term-caret { animation: none; } }
+@media (max-width: 480px) { .hud { font-size: 0.56rem; padding: 0.7rem 0.75rem; } }

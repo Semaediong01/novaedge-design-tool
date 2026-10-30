@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Palette, Shirt, ShieldCheck } from "lucide-react";
 import { getProducts } from "@/lib/products";
 import ProductCard from "@/components/ProductCard";
+import TerminalLine from "@/components/TerminalLine";
 
 export default async function HomePage() {
   const products = await getProducts({ limit: 8 });
@@ -13,13 +14,14 @@ export default async function HomePage() {
       <section className="hero">
         <div className="container hero-grid">
           <div className="hero-copy">
-            <p className="eyebrow">Nova Edge Clothing</p>
+            <p className="eyebrow eyebrow-tech">Nova Edge Clothing</p>
             <h1 className="hero-title">
               Made to wear. <em>Made yours.</em>
             </h1>
             <p className="hero-sub">
               Premium everyday pieces with the Nova Edge symbol, or without it. Start clean, add your own design, and we print it on demand.
             </p>
+            <TerminalLine />
             <div className="hero-cta">
               <Link href="/shop" className="btn btn-lg">
                 Shop now
@@ -31,6 +33,11 @@ export default async function HomePage() {
           </div>
 
           <div className="hero-stage" aria-hidden>
+            <span className="hud hud-tl">NE // 001</span>
+            <span className="hud hud-tr">FRONT</span>
+            <span className="hud hud-bl">PRINT AREA 220 × 300</span>
+            <span className="hud hud-br">● LIVE PREVIEW</span>
+            <span className="hero-scan" />
             <Image className="hero-mark" src="/brand/ne-monogram-white.png" alt="" width={389} height={328} />
             <div className="hero-tee">
               <div className="hero-tee-print">
