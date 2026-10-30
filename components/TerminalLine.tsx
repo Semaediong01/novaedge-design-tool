@@ -4,7 +4,7 @@
 
 import { useEffect, useState } from "react";
 
-const LINES = ["pick a piece", "make it yours", "we print on demand", "shipped to your door"];
+const LINES = ["pick a piece", "make it yours", "we deliver it to you"];
 
 export default function TerminalLine() {
   const [index, setIndex] = useState(0);

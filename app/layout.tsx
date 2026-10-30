@@ -17,7 +17,7 @@ const body = IBM_Plex_Sans({
 
 export const metadata: Metadata = {
   title: { default: "Nova Edge Clothing", template: "%s" },
-  description: "Premium everyday clothing with the Nova Edge symbol, or without it. Make it yours and we print it on demand.",
+  description: "Premium everyday clothing. Make it yours and we deliver it to your door.",
 };
 
 const THEME_SCRIPT = `(function(){var t="light";try{if(localStorage.getItem("ne-theme")==="dark")t="dark"}catch(e){}document.documentElement.setAttribute("data-theme",t)})()`;

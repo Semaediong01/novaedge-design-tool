@@ -15,7 +15,7 @@ export default async function SiteHeader() {
     <>
     <div className="announce">
       <span>Customizing costs nothing extra</span>
-      <span>Printed on demand</span>
+      <span>Delivered to your door</span>
       <span>Secure payment with Paystack</span>
     </div>
     <header className="site-header">

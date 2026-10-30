@@ -13,7 +13,7 @@ export default async function SiteFooter() {
           <Link href="/" aria-label="Nova Edge Clothing, home">
             <Image className="footer-logo" src="/brand/novaedge-logo-white.png" alt="Nova Edge Clothing" width={696} height={431} />
           </Link>
-          <p className="footer-note">Premium everyday clothing, printed on demand and shipped to you.</p>
+          <p className="footer-note">Premium everyday clothing, delivered to you.</p>
         </div>
         <div>
           <h3>Shop</h3>
