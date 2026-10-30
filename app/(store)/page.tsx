@@ -4,7 +4,6 @@ import Link from "next/link";
 import { Palette, Shirt, ShieldCheck } from "lucide-react";
 import { getProducts } from "@/lib/products";
 import ProductCard from "@/components/ProductCard";
-import TerminalLine from "@/components/TerminalLine";
 
 export default async function HomePage() {
   const products = await getProducts({ limit: 8 });
@@ -14,14 +13,13 @@ export default async function HomePage() {
       <section className="hero">
         <div className="container hero-grid">
           <div className="hero-copy">
-            <p className="eyebrow eyebrow-tech">Nova Edge Clothing</p>
+            <p className="eyebrow">Nova Edge Clothing</p>
             <h1 className="hero-title">
               Made to wear. <em>Made yours.</em>
             </h1>
             <p className="hero-sub">
               Premium everyday pieces, made to be yours. Start clean, add your own design, and we deliver it to you.
             </p>
-            <TerminalLine />
             <div className="hero-cta">
               <Link href="/shop" className="btn btn-lg">
                 Shop now

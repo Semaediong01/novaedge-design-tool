@@ -468,13 +468,6 @@ textarea.field { resize: vertical; }
 
 /* ---------- Tech touches: blueprint hero, terminal line, mono labels ---------- */
 :root { --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace; }
-.eyebrow-tech::before { content: "// "; opacity: 0.55; }
-.steps-band .eyebrow::before { content: "// "; opacity: 0.55; }
-
-.term { display: flex; align-items: center; gap: 0.6rem; font-family: var(--mono); font-size: 0.95rem; color: var(--accent); margin: -0.75rem 0 1.75rem; min-height: 1.5em; flex-wrap: wrap; }
-.term-prompt { color: var(--muted); }
-.term-caret { display: inline-block; width: 0.55em; height: 1.1em; background: var(--accent); margin-left: -0.35rem; animation: term-blink 1s steps(1) infinite; }
-@keyframes term-blink { 50% { opacity: 0; } }
 
 /* Blueprint grid behind the hero tee, with corner readouts and a slow scan line */
 .hero-stage { isolation: isolate; }
@@ -500,5 +493,11 @@ textarea.field { resize: vertical; }
   animation: hero-scan 5.5s ease-in-out infinite;
 }
 @keyframes hero-scan { 0% { top: -90px; opacity: 0; } 12% { opacity: 1; } 88% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { .hero-scan { display: none; } .term-caret { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .hero-scan { display: none; } }
 @media (max-width: 480px) { .hud { font-size: 0.56rem; padding: 0.7rem 0.75rem; } }
+
+/* Phones go straight from the catchphrase to the products: no tee picture, no benefits strip */
+@media (max-width: 640px) {
+  .hero-stage, .value-strip { display: none; }
+  .hero-grid { padding-bottom: 2rem; }
+}
