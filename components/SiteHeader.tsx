@@ -59,7 +59,7 @@ export default async function SiteHeader() {
         {sections.map((s) => (
           <Link key={s.name} href={`/shop?category=${encodeURIComponent(s.name)}`}>
             {s.name}
-            {s.count === 0 && <span className="soon-tag">Soon</span>}
+            {s.soon && <span className="soon-tag">Soon</span>}
           </Link>
         ))}
         <Link href="/shop?custom=1" className="category-nav-accent">

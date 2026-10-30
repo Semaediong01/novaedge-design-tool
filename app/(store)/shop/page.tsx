@@ -24,7 +24,7 @@ export default async function ShopPage({
   const all = await getProducts({ category, q });
   const products = custom ? all.filter((p) => p.customizable) : all;
 
-  const comingSoon = Boolean(category) && !q && !custom && products.length === 0 && (MAIN_SECTIONS as readonly string[]).includes(category as string);
+  const comingSoon = Boolean(category) && !q && !custom && products.length === 0 && category !== "T-Shirts" && (MAIN_SECTIONS as readonly string[]).includes(category as string);
   const heading = q ? `Results for “${q}”` : custom ? "Design your own" : (category ?? "All products");
 
   return (
@@ -43,7 +43,7 @@ export default async function ShopPage({
         {sections.map((s) => (
           <Link key={s.name} href={`/shop?category=${encodeURIComponent(s.name)}`} className={`chip${category === s.name ? " active" : ""}`}>
             {s.name}
-            {s.count === 0 && <span className="soon-tag">Soon</span>}
+            {s.soon && <span className="soon-tag">Soon</span>}
           </Link>
         ))}
       </div>

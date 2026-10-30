@@ -7,7 +7,7 @@ import { CATEGORIES } from "@/lib/types";
 
 export const MAIN_SECTIONS = ["T-Shirts", "Hoodies", "Joggers", "Caps", "Casuals"] as const;
 
-export type ShopSection = { name: string; count: number };
+export type ShopSection = { name: string; count: number; soon: boolean };
 
 export async function getShopSections(): Promise<ShopSection[]> {
   const supabase = await createClient();
@@ -16,5 +16,6 @@ export async function getShopSections(): Promise<ShopSection[]> {
   for (const row of (data ?? []) as { category: string }[]) counts.set(row.category, (counts.get(row.category) ?? 0) + 1);
 
   const names = [...MAIN_SECTIONS, ...CATEGORIES.filter((c) => !(MAIN_SECTIONS as readonly string[]).includes(c) && counts.has(c))];
-  return names.map((name) => ({ name, count: counts.get(name) ?? 0 }));
+  // T-Shirts is the live section and never shows Soon; the others show Soon until they have a product.
+  return names.map((name) => ({ name, count: counts.get(name) ?? 0, soon: name !== "T-Shirts" && !counts.get(name) }));
 }
