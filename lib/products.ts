@@ -76,7 +76,9 @@ export async function getProducts(opts: { category?: string; q?: string; limit?:
     if (opts.limit) query = query.limit(opts.limit);
     return query;
   };
-  let { data, error } = await run();
+  const first = await run();
+  let data = first.data;
+  const error = first.error;
   if (error) {
     // Older database without the sort_order column: fall back to newest first.
     let q = supabase.from("products").select("*").eq("active", true).order("created_at", { ascending: false });

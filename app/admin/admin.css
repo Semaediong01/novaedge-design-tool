@@ -83,3 +83,7 @@
 .ad-key-value { display: grid; grid-template-columns: max-content 1fr; gap: 0.35rem 1rem; font-size: 0.95rem; }
 .ad-key-value dt { color: var(--muted); }
 .ad-key-value dd { margin: 0; word-break: break-word; }
+
+/* Keep wide tables from stretching the whole page on phones */
+.admin-shell { grid-template-columns: 230px minmax(0, 1fr); }
+@media (max-width: 860px) { .admin-shell { grid-template-columns: minmax(0, 1fr); } }

@@ -24,10 +24,13 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
   const range: RangeKey = RANGES.some((r) => r.key === rawRange) ? (rawRange as RangeKey) : "30d";
   const supabase = await createClient();
 
-  const today = lagosDate(Date.now());
+  // Read the clock once per request (this page renders on the server for every visit).
+  // eslint-disable-next-line react-hooks/purity
+  const nowMs = Date.now();
+  const today = lagosDate(nowMs);
   const fromDay = range === "today" ? today : range === "7d" ? addDays(today, -6) : range === "30d" ? addDays(today, -29) : null;
   const startIso = fromDay ? lagosStart(fromDay).toISOString() : null;
-  const hourAgo = new Date(Date.now() - 3600_000).toISOString();
+  const hourAgo = new Date(nowMs - 3600_000).toISOString();
 
   const count = (q: PromiseLike<{ count: number | null }>) => q.then((r) => r.count ?? 0);
 

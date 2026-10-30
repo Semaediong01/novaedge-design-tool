@@ -367,10 +367,20 @@ alter table public.order_items
 alter table public.designs add column if not exists production_url text;
 
 -- ---------------------------------------------------------------- discount use counter (server only)
+-- Counts one use of a code. Returns false when the code is no longer usable (limit reached, switched off or expired),
+-- so a limited code can never be used more times than its limit.
+drop function if exists public.bump_discount_use(text);
 create or replace function public.bump_discount_use(p_code text)
-returns void language sql security definer set search_path = public as $$
-  update public.discounts set used_count = used_count + 1 where code = upper(p_code);
-$$;
+returns boolean language plpgsql security definer set search_path = public as $$
+declare ok boolean;
+begin
+  update public.discounts set used_count = used_count + 1
+  where code = upper(p_code) and active
+    and (usage_limit is null or used_count < usage_limit)
+    and (ends_at is null or ends_at >= now() - interval '1 day')
+  returning true into ok;
+  return coalesce(ok, false);
+end $$;
 revoke all on function public.bump_discount_use(text) from public, anon, authenticated;
 grant execute on function public.bump_discount_use(text) to service_role;
 

@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getProduct } from "@/lib/products";
+import { getTemplates } from "@/lib/store-data";
 import ProductView from "@/components/mockups/ProductView";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
@@ -14,6 +15,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
   const { id } = await params;
   const product = await getProduct(id);
   if (!product) notFound();
+  const templates = product.customizable && product.in_stock ? await getTemplates(product.category) : [];
 
   return (
     <main className="container section">
@@ -22,6 +24,12 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
       </p>
 
       <ProductView product={product} />
+
+      {templates.length > 0 && (
+        <Link href={`/design?productId=${product.id}`} className="text-link pdp-template-link">
+          Start from a template ({templates.length} available)
+        </Link>
+      )}
     </main>
   );
 }

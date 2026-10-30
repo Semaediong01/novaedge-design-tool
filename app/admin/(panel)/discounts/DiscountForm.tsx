@@ -1,6 +1,7 @@
 // DiscountForm.tsx — add / edit a discount code
 "use client";
 
+import Link from "next/link";
 import { useActionState, useState } from "react";
 import { saveDiscount, type DiscountFormState } from "./actions";
 import "./discounts.css";
@@ -167,7 +168,7 @@ export default function DiscountForm({ discount, products }: { discount?: FormDi
 
       <div className="ad-actions">
         <button type="submit" className="btn" disabled={pending}>{pending ? "Saving..." : discount ? "Save changes" : "Create code"}</button>
-        <a href="/admin/discounts" className="text-link">Cancel</a>
+        <Link href="/admin/discounts" className="text-link">Cancel</Link>
       </div>
     </form>
   );

@@ -38,8 +38,18 @@ export async function settleOrder(reference: string, expectedUserId?: string) {
   if (flipped && flipped.length > 0) {
     const { data: items } = await db.from("order_items").select("design_id").eq("order_id", order.id);
     const designIds = (items ?? []).map((i) => i.design_id).filter(Boolean) as string[];
-    if (designIds.length) await db.from("designs").update({ locked: true }).in("id", designIds);
-    if (order.discount_code) await db.rpc("bump_discount_use", { p_code: order.discount_code });
+    const notes: string[] = [];
+    if (designIds.length) {
+      const { error } = await db.from("designs").update({ locked: true }).in("id", designIds);
+      if (error) notes.push("Could not lock the designs automatically.");
+    }
+    if (order.discount_code) {
+      const { data: counted, error } = await db.rpc("bump_discount_use", { p_code: order.discount_code });
+      if (error) notes.push(`Could not count the use of code ${order.discount_code}.`);
+      else if (counted === false) notes.push(`Code ${order.discount_code} was over its limit or no longer active when this order was paid.`);
+    }
+    // Anything that needs a human look is written on the order so the admin sees it.
+    if (notes.length) await db.from("orders").update({ admin_note: notes.join(" ") }).eq("id", order.id);
   }
 
   return { ok: true as const, orderId: order.id };

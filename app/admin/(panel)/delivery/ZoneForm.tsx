@@ -1,6 +1,7 @@
 // ZoneForm.tsx — add / edit a delivery zone
 "use client";
 
+import Link from "next/link";
 import { useActionState, useState } from "react";
 import { NIGERIAN_STATES } from "@/lib/nigeria";
 import { saveZone, type ZoneFormState } from "./actions";
@@ -84,7 +85,7 @@ export default function ZoneForm({ zone, takenBy }: { zone?: FormZone; takenBy: 
 
       <div className="ad-actions">
         <button type="submit" className="btn" disabled={pending}>{pending ? "Saving..." : zone ? "Save changes" : "Create zone"}</button>
-        <a href="/admin/delivery" className="text-link">Cancel</a>
+        <Link href="/admin/delivery" className="text-link">Cancel</Link>
       </div>
     </form>
   );
