@@ -4,13 +4,13 @@ import { createClient } from "@/lib/supabase/server";
 import type { DeliveryZone, Section, SiteContent, Template } from "@/lib/types";
 
 export const DEFAULT_CONTENT: SiteContent = {
-  announcements: ["Customizing costs nothing extra", "Printed on demand", "Secure payment with Paystack"],
+  announcements: ["Customizing costs nothing extra", "Delivered to your door", "Secure payment with Paystack"],
   hero_eyebrow: "Nova Edge Clothing",
   hero_title: "Made to wear.",
   hero_accent: "Made yours.",
   hero_sub:
-    "Premium everyday pieces with the Nova Edge symbol, or without it. Start clean, add your own design, and we print it on demand.",
-  footer_tagline: "Premium everyday clothing, printed on demand and shipped to you.",
+    "Premium everyday pieces, made to be yours. Start clean, add your own design, and we deliver it to your door.",
+  footer_tagline: "Premium everyday clothing, delivered to you.",
   contact_email: "",
   contact_phone: "",
   instagram: "",
