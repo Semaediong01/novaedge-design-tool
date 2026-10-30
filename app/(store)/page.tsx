@@ -5,7 +5,6 @@ import { Palette, Shirt, ShieldCheck } from "lucide-react";
 import { getHomeProducts } from "@/lib/products";
 import { getSiteContent } from "@/lib/store-data";
 import ProductCard from "@/components/ProductCard";
-import TerminalLine from "@/components/TerminalLine";
 
 export default async function HomePage() {
   const [products, content] = await Promise.all([getHomeProducts(8), getSiteContent()]);
@@ -15,12 +14,11 @@ export default async function HomePage() {
       <section className="hero">
         <div className="container hero-grid">
           <div className="hero-copy">
-            <p className="eyebrow eyebrow-tech">{content.hero_eyebrow}</p>
+            <p className="eyebrow">{content.hero_eyebrow}</p>
             <h1 className="hero-title">
               {content.hero_title} <em>{content.hero_accent}</em>
             </h1>
             <p className="hero-sub">{content.hero_sub}</p>
-            <TerminalLine />
             <div className="hero-cta">
               <Link href="/shop" className="btn btn-lg">
                 Shop now
