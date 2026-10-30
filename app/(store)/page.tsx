@@ -19,7 +19,7 @@ export default async function HomePage() {
               Made to wear. <em>Made yours.</em>
             </h1>
             <p className="hero-sub">
-              Premium everyday pieces, made to be yours. Start clean, add your own design, and we deliver it to your door.
+              Premium everyday pieces, made to be yours. Start clean, add your own design, and we deliver it to you.
             </p>
             <TerminalLine />
             <div className="hero-cta">
@@ -104,7 +104,7 @@ export default async function HomePage() {
               <strong>Make it yours.</strong> Keep the Nova Edge symbol, resize it, or remove it. Add text, shapes or your own image.
             </li>
             <li>
-              <strong>We deliver it.</strong> We make your piece and bring it to your door. Customizing costs nothing extra.
+              <strong>We deliver it.</strong> We make your piece and bring it to you. Customizing costs nothing extra.
             </li>
           </ol>
           <Link href="/shop?custom=1" className="btn btn-lg btn-light">
