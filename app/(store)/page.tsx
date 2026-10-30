@@ -15,22 +15,12 @@ export default async function HomePage() {
       <section className="hero">
         <div className="container hero-grid">
           <div className="hero-copy">
-<<<<<<< HEAD
-            <p className="eyebrow">{content.hero_eyebrow}</p>
-=======
-            <p className="eyebrow eyebrow-tech">Nova Edge Clothing</p>
->>>>>>> brand-tech
+            <p className="eyebrow eyebrow-tech">{content.hero_eyebrow}</p>
             <h1 className="hero-title">
               {content.hero_title} <em>{content.hero_accent}</em>
             </h1>
-<<<<<<< HEAD
             <p className="hero-sub">{content.hero_sub}</p>
-=======
-            <p className="hero-sub">
-              Premium everyday pieces, made to be yours. Start clean, add your own design, and we deliver it to your door.
-            </p>
             <TerminalLine />
->>>>>>> brand-tech
             <div className="hero-cta">
               <Link href="/shop" className="btn btn-lg">
                 Shop now

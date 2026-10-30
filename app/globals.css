@@ -466,7 +466,6 @@ textarea.field { resize: vertical; }
 .coming-soon .lede { margin: 1rem auto 1.75rem; }
 .coming-soon .hero-cta { justify-content: center; }
 
-<<<<<<< HEAD
 /* ---------- Promo prices ---------- */
 .price-was { color: var(--muted); font-weight: 400; margin-right: 0.35rem; font-size: 0.9em; }
 .tag-promo { background: #b3261e; color: #fff; left: auto; right: 0.6rem; }
@@ -476,7 +475,7 @@ textarea.field { resize: vertical; }
 .code-row .field { flex: 1; min-width: 0; text-transform: uppercase; }
 .form-ok { color: var(--accent); font-size: 0.9rem; font-weight: 600; }
 .summary-total { border-top: 1px solid var(--line); padding-top: 0.75rem; margin-top: 0.25rem; font-size: 1.05rem; }
-=======
+
 /* ---------- Tech touches: blueprint hero, terminal line, mono labels ---------- */
 :root { --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace; }
 .eyebrow-tech::before { content: "// "; opacity: 0.55; }
@@ -513,4 +512,3 @@ textarea.field { resize: vertical; }
 @keyframes hero-scan { 0% { top: -90px; opacity: 0; } 12% { opacity: 1; } 88% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .hero-scan { display: none; } .term-caret { animation: none; } }
 @media (max-width: 480px) { .hud { font-size: 0.56rem; padding: 0.7rem 0.75rem; } }
->>>>>>> brand-tech

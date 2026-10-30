@@ -14,7 +14,6 @@ export default async function SiteFooter() {
           <Link href="/" aria-label="Nova Edge Clothing, home">
             <Image className="footer-logo" src="/brand/novaedge-logo-white.png" alt="Nova Edge Clothing" width={696} height={431} />
           </Link>
-<<<<<<< HEAD
           <p className="footer-note">{content.footer_tagline}</p>
           {(content.contact_email || content.contact_phone || content.instagram) && (
             <p className="footer-note">
@@ -23,9 +22,6 @@ export default async function SiteFooter() {
               {content.instagram && <><br />{content.instagram}</>}
             </p>
           )}
-=======
-          <p className="footer-note">Premium everyday clothing, delivered to you.</p>
->>>>>>> brand-tech
         </div>
         <div>
           <h3>Shop</h3>
