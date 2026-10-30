@@ -25,37 +25,53 @@ export function normalizeProduct(row: Record<string, unknown>): Product {
   };
 }
 
-let starterChecked = false;
-
 /**
- * The store always starts with the plain Classic Tee. If the database has no products at all and the starter
- * has never been added, add it once. (After that, products are managed only in the admin.)
+ * The store launches with one plain, designable tee in White, Black and Ash. It always shows, even before it exists
+ * in the database: the built-in copy is used for display and saved (with this fixed id) the first time the server can.
  */
-async function ensureStarterProduct() {
-  if (starterChecked) return;
-  starterChecked = true;
+export const CLASSIC_TEE_ID = "00000000-0000-4000-8000-000000000001";
+
+function builtInTee(): Product {
+  return normalizeProduct({
+    id: CLASSIC_TEE_ID,
+    title: "Classic Tee",
+    description: "A clean everyday tee with the small Nova Edge symbol on the chest. Keep it, resize it or remove it, or add your own design.",
+    category: "T-Shirts",
+    price: 15000,
+    images: [],
+    sizes: ["S", "M", "L", "XL", "XXL"],
+    colors: ["White", "Black", "Ash"],
+    customizable: true,
+    in_stock: true,
+    active: true,
+    featured: true,
+    created_at: "2026-10-30T00:00:00Z",
+  });
+}
+
+async function saveClassicTee() {
   try {
     const db = createServiceClient();
     const { count } = await db.from("products").select("*", { count: "exact", head: true });
-    if (count !== 0) return;
-    const flag = await db.from("site_settings").select("key").eq("key", "starter_seeded").maybeSingle();
-    if (flag.data) return; // it was added before and then deliberately removed
-    const { error } = await db.from("products").insert({
-      title: "Classic Tee",
-      description:
-        "A clean everyday tee with the small Nova Edge symbol on the chest. Keep it, resize it or remove it, or add your own design.",
-      category: "T-Shirts",
-      price: 15000,
-      images: [],
-      sizes: ["S", "M", "L", "XL", "XXL"],
-      colors: ["White", "Black", "Ash"],
-      customizable: true,
-      in_stock: true,
-      active: true,
-    });
-    if (!error) await db.from("site_settings").upsert({ key: "starter_seeded", value: { at: new Date().toISOString() } });
+    if (count !== 0) return; // the store already has products: never add one behind the admin's back
+    await db.from("products").upsert(
+      {
+        id: CLASSIC_TEE_ID,
+        title: "Classic Tee",
+        description: builtInTee().description,
+        category: "T-Shirts",
+        price: 15000,
+        images: [],
+        sizes: ["S", "M", "L", "XL", "XXL"],
+        colors: ["White", "Black", "Ash"],
+        customizable: true,
+        in_stock: true,
+        active: true,
+      },
+      { onConflict: "id", ignoreDuplicates: true }
+    );
   } catch {
-    starterChecked = false; // try again on the next request
+    /* no server key yet: the built-in copy still displays */
   }
 }
 
@@ -86,9 +102,10 @@ export async function getProducts(opts: { category?: string; q?: string; limit?:
     if (opts.limit) q = q.limit(opts.limit);
     ({ data } = await q);
   }
-  if ((data ?? []).length === 0 && !opts.category && !opts.q) {
-    await ensureStarterProduct();
+  if ((data ?? []).length === 0 && !opts.q && (!opts.category || opts.category === "T-Shirts")) {
+    await saveClassicTee();
     ({ data } = await run());
+    if ((data ?? []).length === 0) return [builtInTee()];
   }
   return (data ?? []).map((r) => normalizeProduct(r));
 }
@@ -114,5 +131,11 @@ export async function getProduct(id: string) {
   if (!UUID.test(id)) return null;
   const supabase = await createClient();
   const { data } = await supabase.from("products").select("*").eq("id", id).maybeSingle();
-  return data ? normalizeProduct(data) : null;
+  if (data) return normalizeProduct(data);
+  if (id === CLASSIC_TEE_ID) {
+    await saveClassicTee();
+    const again = await supabase.from("products").select("*").eq("id", id).maybeSingle();
+    return again.data ? normalizeProduct(again.data) : builtInTee();
+  }
+  return null;
 }
