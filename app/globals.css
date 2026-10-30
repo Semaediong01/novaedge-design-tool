@@ -247,7 +247,15 @@ button, input, select, textarea { font-family: inherit; font-size: inherit; }
 .steps strong { color: var(--white); display: block; font-size: 1.1rem; margin-bottom: 0.25rem; }
 
 /* ---------- Product grid ---------- */
-.grid-products { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 2rem 1.25rem; }
+.grid-products { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 260px)); gap: 2rem 1.25rem; justify-content: start; }
+@media (min-width: 1100px) { .grid-products { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+/* Phones: two products per row, like most stores, so one product never fills the whole screen */
+@media (max-width: 640px) {
+  .grid-products { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.4rem 0.75rem; }
+  .product-meta { flex-direction: column; gap: 0.1rem; margin-top: 0.5rem; }
+  .product-meta h3 { font-size: 0.95rem; }
+  .product-card .tag { font-size: 0.64rem; padding: 0.15rem 0.5rem; left: 0.4rem; bottom: 0.4rem; }
+}
 .product-card { text-decoration: none; color: inherit; display: block; }
 .product-thumb { position: relative; aspect-ratio: 1; background: var(--soft); border-radius: var(--radius); overflow: hidden; border: 1px solid var(--line); transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease; }
 .product-card:hover .product-thumb { border-color: var(--green); box-shadow: var(--shadow); transform: translateY(-2px); }
