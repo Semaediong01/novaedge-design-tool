@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { getProducts } from "@/lib/products";
 import ProductCard from "@/components/ProductCard";
-import { MAIN_SECTIONS, getShopSections } from "@/lib/categories";
+import { getShopSections } from "@/lib/categories";
 
 export const metadata = { title: "Shop · Nova Edge" };
 
@@ -24,7 +24,8 @@ export default async function ShopPage({
   const all = await getProducts({ category, q });
   const products = custom ? all.filter((p) => p.customizable) : all;
 
-  const comingSoon = Boolean(category) && !q && !custom && products.length === 0 && (MAIN_SECTIONS as readonly string[]).includes(category as string);
+  const chosen = sections.find((s) => s.name === category);
+  const comingSoon = Boolean(chosen?.soon) && !q && !custom;
   const heading = q ? `Results for “${q}”` : custom ? "Design your own" : (category ?? "All products");
 
   return (
@@ -43,7 +44,7 @@ export default async function ShopPage({
         {sections.map((s) => (
           <Link key={s.name} href={`/shop?category=${encodeURIComponent(s.name)}`} className={`chip${category === s.name ? " active" : ""}`}>
             {s.name}
-            {s.count === 0 && <span className="soon-tag">Soon</span>}
+            {s.soon && <span className="soon-tag">Soon</span>}
           </Link>
         ))}
       </div>
@@ -53,7 +54,7 @@ export default async function ShopPage({
           <Image className="coming-soon-mark" src="/brand/ne-monogram.png" alt="" width={389} height={328} />
           <p className="eyebrow">Coming soon</p>
           <h2>{category} are coming</h2>
-          <p className="lede">{SOON_COPY[category as string]}</p>
+          <p className="lede">{SOON_COPY[category as string] ?? "We're getting this section ready. Check back soon."}</p>
           <div className="hero-cta">
             <Link href="/shop?category=T-Shirts" className="btn btn-lg">
               Shop tees

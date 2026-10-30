@@ -45,5 +45,11 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Affiliate links: remember ?ref=CODE for 30 days so a later purchase is credited (the last link wins).
+  const ref = request.nextUrl.searchParams.get("ref");
+  if (ref && /^[A-Za-z0-9_-]{2,40}$/.test(ref)) {
+    response.cookies.set("ne_ref", ref.toUpperCase(), { maxAge: 60 * 60 * 24 * 30, httpOnly: true, sameSite: "lax", path: "/" });
+  }
+
   return response;
 }

@@ -1,20 +1,20 @@
-// lib/categories.ts — the sections of the shop.
-// The five main sections always show in the menu. A section with no products yet opens a "coming soon"
-// page, and the first product added to it in the admin turns it into a normal shop section.
-// Any other category (Sweatshirts, Accessories) appears only once it has a product.
+// lib/categories.ts — the sections of the shop, managed in Admin -> Sections.
+// A section marked "Soon" shows the Soon tag and the coming-soon page until the admin switches it off.
 import { createClient } from "@/lib/supabase/server";
-import { CATEGORIES } from "@/lib/types";
+import { getAllSections } from "@/lib/store-data";
 
-export const MAIN_SECTIONS = ["T-Shirts", "Hoodies", "Joggers", "Caps", "Casuals"] as const;
-
-export type ShopSection = { name: string; count: number };
+export type ShopSection = { name: string; count: number; soon: boolean };
 
 export async function getShopSections(): Promise<ShopSection[]> {
   const supabase = await createClient();
-  const { data } = await supabase.from("products").select("category").eq("active", true);
+  const [sections, { data }] = await Promise.all([
+    getAllSections(),
+    supabase.from("products").select("category").eq("active", true),
+  ]);
   const counts = new Map<string, number>();
   for (const row of (data ?? []) as { category: string }[]) counts.set(row.category, (counts.get(row.category) ?? 0) + 1);
 
-  const names = [...MAIN_SECTIONS, ...CATEGORIES.filter((c) => !(MAIN_SECTIONS as readonly string[]).includes(c) && counts.has(c))];
-  return names.map((name) => ({ name, count: counts.get(name) ?? 0 }));
+  return sections
+    .filter((s) => s.visible)
+    .map((s) => ({ name: s.name, count: counts.get(s.name) ?? 0, soon: s.soon }));
 }

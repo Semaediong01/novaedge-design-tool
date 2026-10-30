@@ -5,6 +5,8 @@ import { requireUser } from "@/lib/auth";
 import { getProduct } from "@/lib/products";
 import { createClient } from "@/lib/supabase/server";
 import { usesTeeMockup } from "@/lib/mockups";
+import { effectivePrice } from "@/lib/pricing";
+import { getTemplates } from "@/lib/store-data";
 import DesignCanvas from "./DesignCanvas";
 
 export const metadata = { title: "Designer · Nova Edge" };
@@ -12,14 +14,15 @@ export const metadata = { title: "Designer · Nova Edge" };
 export default async function DesignPage({
   searchParams,
 }: {
-  searchParams: Promise<{ productId?: string; designId?: string; size?: string; color?: string }>;
+  searchParams: Promise<{ productId?: string; designId?: string; size?: string; color?: string; templateId?: string }>;
 }) {
-  const { productId, designId, size, color } = await searchParams;
+  const { productId, designId, size, color, templateId } = await searchParams;
   const qs = new URLSearchParams();
   if (productId) qs.set("productId", productId);
   if (designId) qs.set("designId", designId);
   if (size) qs.set("size", size);
   if (color) qs.set("color", color);
+  if (templateId) qs.set("templateId", templateId);
   const user = await requireUser(`/design?${qs.toString()}`);
 
   if (!productId) {
@@ -60,6 +63,13 @@ export default async function DesignPage({
     }
   }
 
+  const templates = (await getTemplates(product.category)).map((t) => ({
+    id: t.id,
+    title: t.title,
+    preview_url: t.preview_url,
+    elements: Array.isArray(t.elements) ? t.elements : [],
+  }));
+
   return (
     <DesignCanvas
       userId={user.id}
@@ -68,10 +78,15 @@ export default async function DesignPage({
         title: product.title,
         image: mockup ? null : product.images[0],
         mockup,
-        price: product.price,
+        price: effectivePrice(product),
         sizes: product.sizes,
         colors: product.colors,
+        symbolDefault: product.symbol_default,
+        allowUploads: product.allow_uploads,
+        soldOutVariants: product.sold_out_variants,
       }}
+      templates={templates}
+      initialTemplateId={!initialDesign && templateId ? templateId : null}
       initialDesign={initialDesign}
       initialSize={size && product.sizes.includes(size) ? size : (product.sizes[0] ?? "")}
       initialColor={color && product.colors.includes(color) ? color : (product.colors[0] ?? "")}

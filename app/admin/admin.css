@@ -1,0 +1,85 @@
+/* app/admin/admin.css — shared admin styles. Page-specific styles live next to their page. */
+.admin-shell .admin-main { max-width: 1180px; padding: 1.75rem 2rem 5rem; min-width: 0; }
+.admin-shell .admin-side { gap: 1rem; overflow-y: auto; }
+.ad-brand .brand-word { font-size: 0.85rem; letter-spacing: 0.22em; }
+.ad-nav { gap: 0.9rem; }
+.ad-nav-group { display: flex; flex-direction: column; gap: 0.1rem; }
+.ad-nav-label { font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); font-weight: 700; padding: 0 0.75rem 0.25rem; }
+.ad-nav a { font-size: 0.93rem; padding: 0.42rem 0.75rem; }
+.ad-nav a.active { background: var(--green); color: var(--white); }
+
+@media (max-width: 860px) {
+  .admin-shell .admin-side { position: static; height: auto; overflow: visible; flex-direction: column; align-items: stretch; padding: 0.9rem 1rem; }
+  .ad-nav { flex-direction: row; overflow-x: auto; gap: 0.25rem; padding-bottom: 0.35rem; scrollbar-width: thin; }
+  .ad-nav-group { flex-direction: row; align-items: center; gap: 0.15rem; flex: none; }
+  .ad-nav-label { display: none; }
+  .ad-nav a { white-space: nowrap; }
+  .admin-shell .admin-main { padding: 1.1rem 1rem 4rem; }
+  .admin-user { flex-direction: row; justify-content: space-between; align-items: center; }
+}
+
+/* Page header */
+.ad-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+.ad-head h1 { margin: 0; }
+.ad-head p { color: var(--muted); margin-top: 0.25rem; max-width: 62ch; }
+.ad-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; }
+
+/* Cards and grids */
+.ad-card { border: 1px solid var(--line); background: var(--surface); border-radius: 14px; padding: 1.15rem 1.25rem; box-shadow: var(--shadow); }
+.ad-card + .ad-card { margin-top: 1rem; }
+.ad-card h2 { font-size: 1.1rem; margin-bottom: 0.75rem; }
+.ad-grid { display: grid; gap: 1rem; }
+.ad-grid-2 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); }
+.ad-grid-3 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); }
+.ad-stack { display: flex; flex-direction: column; gap: 1rem; }
+
+/* Tables (scroll sideways on phones instead of breaking the page) */
+.ad-table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+.ad-table-wrap .table th:first-child, .ad-table-wrap .table td:first-child { padding-left: 1rem; }
+.ad-table { width: 100%; border-collapse: collapse; min-width: 560px; }
+.ad-table th { text-align: left; font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 700; padding: 0.7rem 0.9rem; border-bottom: 1.5px solid var(--green); white-space: nowrap; }
+.ad-table td { padding: 0.7rem 0.9rem; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.ad-table tr:last-child td { border-bottom: 0; }
+.ad-table tbody tr:hover { background: var(--soft); }
+.ad-table .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ad-table a.row-link { font-weight: 600; text-decoration: none; color: var(--ink); }
+.ad-table a.row-link:hover { color: var(--green); text-decoration: underline; }
+.ad-empty { padding: 2rem 1rem; text-align: center; color: var(--muted); }
+
+/* Badges */
+.ad-badge { display: inline-block; padding: 0.12rem 0.65rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700; border: 1.5px solid var(--line); background: var(--soft); color: var(--text); text-transform: capitalize; white-space: nowrap; }
+.ad-badge.good { background: var(--mint); border-color: var(--green-line); color: var(--accent); }
+.ad-badge.warn { background: #fff3bf; border-color: #f0dd8a; color: #5c4a00; }
+.ad-badge.info { background: #dbeafe; border-color: #b3d1f5; color: #0b4a7d; }
+.ad-badge.bad { background: var(--danger-bg); border-color: var(--danger-line); color: var(--danger); }
+.ad-badge.dim { opacity: 0.75; }
+:root[data-theme="dark"] .ad-badge.warn { background: #3a3210; border-color: #5a4c14; color: #f3df8a; }
+:root[data-theme="dark"] .ad-badge.info { background: #10283f; border-color: #1b4568; color: #9ccaf5; }
+
+/* Toolbar: search and filters */
+.ad-toolbar { display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; margin-bottom: 1rem; }
+.ad-toolbar .field { width: auto; min-width: 0; padding: 0.5rem 0.8rem; }
+.ad-toolbar input[type="search"] { flex: 1 1 220px; }
+
+/* Forms */
+.ad-form { display: flex; flex-direction: column; gap: 1rem; max-width: 760px; }
+.ad-form.wide { max-width: none; }
+.ad-row { display: grid; gap: 0.85rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); align-items: start; }
+.ad-hint { color: var(--muted); font-size: 0.85rem; margin-top: 0.2rem; }
+.ad-switch { display: flex; align-items: center; gap: 0.7rem; font-weight: 600; cursor: pointer; }
+.ad-switch input { width: 20px; height: 20px; accent-color: var(--green); flex: none; }
+.ad-inline-form { display: inline-flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; }
+.btn-xs { padding: 0.28rem 0.7rem; font-size: 0.8rem; }
+
+/* Flash message after a save */
+.ad-flash { border: 1.5px solid var(--green-line); background: var(--mint); color: var(--accent); border-radius: 10px; padding: 0.6rem 0.9rem; font-weight: 600; margin-bottom: 1rem; }
+.ad-flash.err { border-color: var(--danger-line); background: var(--danger-bg); color: var(--danger); }
+
+/* Stat tiles */
+.ad-stat { border: 1px solid var(--line); background: var(--surface); border-radius: 14px; padding: 1rem 1.1rem; display: flex; flex-direction: column; gap: 0.15rem; box-shadow: var(--shadow); }
+.ad-stat strong { font-family: var(--font-display), sans-serif; font-size: 1.75rem; letter-spacing: -0.03em; color: var(--ink); line-height: 1.15; }
+.ad-stat span { color: var(--muted); font-size: 0.88rem; }
+.ad-stat small { color: var(--accent); font-weight: 600; font-size: 0.8rem; }
+.ad-key-value { display: grid; grid-template-columns: max-content 1fr; gap: 0.35rem 1rem; font-size: 0.95rem; }
+.ad-key-value dt { color: var(--muted); }
+.ad-key-value dd { margin: 0; word-break: break-word; }

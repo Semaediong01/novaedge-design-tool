@@ -6,17 +6,18 @@ import CartLink from "./CartLink";
 import BrandLogo from "./BrandLogo";
 import ThemeToggle from "./ThemeToggle";
 import { getShopSections } from "@/lib/categories";
+import { getSiteContent } from "@/lib/store-data";
 
 export default async function SiteHeader() {
   const user = await getUser();
-  const sections = await getShopSections();
+  const [sections, content] = await Promise.all([getShopSections(), getSiteContent()]);
 
   return (
     <>
     <div className="announce">
-      <span>Customizing costs nothing extra</span>
-      <span>Printed on demand</span>
-      <span>Secure payment with Paystack</span>
+      {content.announcements.filter(Boolean).map((line) => (
+        <span key={line}>{line}</span>
+      ))}
     </div>
     <header className="site-header">
       <div className="header-inner">
@@ -59,7 +60,7 @@ export default async function SiteHeader() {
         {sections.map((s) => (
           <Link key={s.name} href={`/shop?category=${encodeURIComponent(s.name)}`}>
             {s.name}
-            {s.count === 0 && <span className="soon-tag">Soon</span>}
+            {s.soon && <span className="soon-tag">Soon</span>}
           </Link>
         ))}
         <Link href="/shop?custom=1" className="category-nav-accent">
