@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Check, Paintbrush, ShoppingBag } from "lucide-react";
 import { useCart } from "./CartProvider";
 import { productImage } from "@/lib/mockups";
+import { effectivePrice, variantSoldOut } from "@/lib/pricing";
 import type { Product } from "@/lib/types";
 
 type Props = {
@@ -31,7 +32,7 @@ export default function ProductActions({ product, color: controlledColor, onColo
       productId: product.id,
       title: product.title,
       image: productImage(product, color),
-      price: product.price,
+      price: effectivePrice(product),
       size,
       color,
       quantity: 1,
@@ -42,7 +43,9 @@ export default function ProductActions({ product, color: controlledColor, onColo
     setTimeout(() => setAdded(false), 2000);
   };
 
+  const soldOut = variantSoldOut(product.sold_out_variants, color, size);
   const customizeHref = `/design?productId=${product.id}&size=${encodeURIComponent(size)}&color=${encodeURIComponent(color)}`;
+  const canCustomize = product.customizable && !soldOut;
 
   return (
     <div className="pdp-actions">
@@ -53,6 +56,7 @@ export default function ProductActions({ product, color: controlledColor, onColo
             {product.sizes.map((s) => (
               <button key={s} type="button" className={`chip${s === size ? " active" : ""}`} onClick={() => setSize(s)} aria-pressed={s === size}>
                 {s}
+                {variantSoldOut(product.sold_out_variants, color, s) && <small className="chip-note"> sold out</small>}
               </button>
             ))}
           </div>
@@ -72,9 +76,11 @@ export default function ProductActions({ product, color: controlledColor, onColo
         </fieldset>
       )}
 
-      {product.in_stock ? (
+      {product.in_stock && soldOut ? (
+        <p className="form-note">{color} in {size} is sold out. Pick another size or colour.</p>
+      ) : product.in_stock ? (
         <div className="pdp-buttons">
-          {product.customizable && (
+          {canCustomize && (
             <Link href={customizeHref} className="btn btn-green btn-lg">
               <Paintbrush size={18} /> Customize this
             </Link>

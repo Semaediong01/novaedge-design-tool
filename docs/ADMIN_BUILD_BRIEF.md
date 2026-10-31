@@ -1,0 +1,8 @@
+# Admin build brief (shared conventions)
+Next.js 16 App Router + React 19 + Supabase + Paystack. Read AGENTS.md first (breaking changes; check node_modules/next/dist/docs/). Authoritative DB: supabase/schema.sql (Pipeline 3 section at the bottom). Shared: lib/types.ts, lib/pricing.ts, lib/checkout.ts, lib/audit.ts (logAction), lib/csv.ts, lib/format.ts, lib/nigeria.ts, lib/store-data.ts, app/admin/admin.css (ad-* classes), app/admin/(panel)/layout.tsx, components/admin/AdminNav.tsx.
+- Every admin page and server action starts with `const user = await requireAdmin()` (lib/auth.ts). Server actions in `actions.ts` ("use server") next to pages.
+- Use `createClient()` (lib/supabase/server) for reads/writes (RLS allows admins). `createServiceClient()` only where RLS cannot work, after requireAdmin().
+- After each change: `logAction(user, "area.verb", entity, id, details)`, `revalidatePath`, redirect with `?saved=1` / `?error=...`, shown with `ad-flash`.
+- Money in naira via `naira()`. Validate/clamp all input on the server. Re-read rows instead of trusting hidden ids.
+- Mobile first; tables inside `<div className="ad-table-wrap">`. Page CSS in own css files with prefixed classes. Do NOT edit app/globals.css, app/admin/admin.css, components/admin/AdminNav.tsx, lib/types.ts, lib/pricing.ts, lib/checkout.ts, supabase/schema.sql (report needed changes).
+- Other helpers work in parallel: tsc/lint errors in files you don't own are not yours. Fix all in yours. No TODO placeholders. Some of your files may already exist from an earlier interrupted attempt: inspect them, keep what is good, finish and fix the rest.

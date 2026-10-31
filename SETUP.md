@@ -5,6 +5,13 @@ Next.js 16 storefront with Supabase (database, login, file storage) and Paystack
 ## 1. Database
 Supabase → SQL Editor → paste all of `supabase/schema.sql` → Run. It creates the tables, security rules and the three storage buckets (`product-images`, `design-uploads`, `print-files`). It is safe to run again.
 
+### Upgrading to the full admin (Pipeline 3)
+1. Supabase -> SQL Editor: run **all of `supabase/schema.sql`** again, then **all of `supabase/seed.sql`**. Both are safe to re-run. This adds sections, discounts, delivery zones, affiliates, templates, store content, the audit log, and splits order status into payment status and fulfillment status.
+2. The first admin in the `admins` table becomes the **owner**. Owners can add and remove other admins in Admin -> Team and activity.
+3. Set `SUPABASE_SERVICE_ROLE_KEY` in Vercel (needed for checkout, customers and team pages).
+4. Affiliate links look like `https://YOUR-DOMAIN/?ref=CODE` and are remembered for 30 days.
+5. Deploy only after step 1: the new checkout uses the new columns.
+
 ## 2. Admin account
 1. Supabase → Authentication → Users → **Add user** → enter the admin email and a strong password (tick "Auto confirm").
 2. SQL Editor, run (with your admin email):

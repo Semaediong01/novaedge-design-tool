@@ -1,0 +1,12 @@
+/* discounts.css — discount code screens */
+.dc-code-row { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
+.dc-code-input { flex: 1 1 200px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.08em; text-transform: uppercase; }
+.dc-products { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: 0.4rem 1rem; max-height: 260px; overflow-y: auto; border: 1.5px solid var(--line); border-radius: 10px; padding: 0.7rem 0.85rem; margin: 0.5rem 0; background: var(--surface); }
+.dc-product span { overflow-wrap: anywhere; }
+.dc-tight { margin-top: 0; }
+.dc-used { margin-top: 0.75rem; }
+.dc-code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700; letter-spacing: 0.06em; }
+.dc-sub { display: block; color: var(--muted); font-size: 0.82rem; max-width: 26ch; overflow-wrap: anywhere; }
+.dc-row-actions { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+.dc-note { margin-top: 1rem; }
+.dc-danger { margin-top: 1.25rem; }

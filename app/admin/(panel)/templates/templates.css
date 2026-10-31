@@ -1,0 +1,10 @@
+/* Admin templates list and editor */
+.tp-thumb { width: 64px; height: 64px; object-fit: contain; border-radius: 8px; background: var(--soft); border: 1px solid var(--line); display: block; }
+.tp-thumb-empty { width: 64px; height: 64px; border-radius: 8px; background: var(--soft); border: 1px dashed var(--line); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: var(--muted); text-align: center; }
+.tp-edit-form { display: flex; flex-direction: column; gap: 0.4rem; min-width: 180px; }
+.tp-edit-form .field { width: 100%; }
+.tp-sort { width: 80px !important; }
+.tp-row { display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; }
+.tp-actions { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+.tp-actions form { margin: 0; }
+.tp-editor-note { margin-bottom: 1rem; }

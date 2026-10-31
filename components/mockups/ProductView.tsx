@@ -5,6 +5,7 @@ import { useState } from "react";
 import { naira } from "@/lib/format";
 import { productImage, usesTeeMockup } from "@/lib/mockups";
 import ProductActions from "@/components/ProductActions";
+import { effectivePrice, promoActive } from "@/lib/pricing";
 import type { Product } from "@/lib/types";
 
 export default function ProductView({ product }: { product: Product }) {
@@ -47,7 +48,10 @@ export default function ProductView({ product }: { product: Product }) {
 
       <div className="pdp-info">
         <h1>{product.title}</h1>
-        <p className="price price-lg">{naira(product.price)}</p>
+        <p className="price price-lg">
+          {promoActive(product) && <s className="price-was">{naira(product.price)}</s>} {naira(effectivePrice(product))}
+          {promoActive(product) && <span className="tag tag-promo tag-inline">{product.promo_label || "Sale"}</span>}
+        </p>
         {product.customizable && <p className="pdp-note">Customizing is included in the price.</p>}
         {tee && <p className="muted">Comes with the small Nova Edge symbol on the chest. Open the designer to make it bigger, smaller, move it or remove it.</p>}
         {product.description && <p className="pdp-desc">{product.description}</p>}

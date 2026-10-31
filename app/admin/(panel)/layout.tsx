@@ -1,9 +1,11 @@
 // app/admin/(panel)/layout.tsx — everything inside needs an admin account
-import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
 import { adminLogout } from "../actions";
+import AdminNav from "@/components/admin/AdminNav";
+import BrandLogo from "@/components/BrandLogo";
+import "../admin.css";
 
-export const metadata = { title: "Admin · Nova Edge" };
+export const metadata = { title: "Admin · Nova Edge", robots: { index: false, follow: false } };
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const user = await requireAdmin();
@@ -11,16 +13,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <div className="admin-shell">
       <aside className="admin-side">
-        <Link href="/admin" className="wordmark">
-          NOVA<span>EDGE</span>
-        </Link>
+        <div className="ad-brand">
+          <BrandLogo />
+        </div>
         <p className="admin-badge">Admin</p>
-        <nav className="admin-nav">
-          <Link href="/admin">Overview</Link>
-          <Link href="/admin/products">Products</Link>
-          <Link href="/admin/orders">Orders</Link>
-          <Link href="/" target="_blank">View store</Link>
-        </nav>
+        <AdminNav />
         <div className="admin-user">
           <span className="muted">{user.email}</span>
           <form action={adminLogout}>

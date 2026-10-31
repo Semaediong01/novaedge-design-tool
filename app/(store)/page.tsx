@@ -2,24 +2,23 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Palette, Shirt, ShieldCheck } from "lucide-react";
-import { getProducts } from "@/lib/products";
+import { getHomeProducts } from "@/lib/products";
+import { getSiteContent } from "@/lib/store-data";
 import ProductCard from "@/components/ProductCard";
 
 export default async function HomePage() {
-  const products = await getProducts({ limit: 8 });
+  const [products, content] = await Promise.all([getHomeProducts(8), getSiteContent()]);
 
   return (
     <main>
       <section className="hero">
         <div className="container hero-grid">
           <div className="hero-copy">
-            <p className="eyebrow">Nova Edge Clothing</p>
+            <p className="eyebrow">{content.hero_eyebrow}</p>
             <h1 className="hero-title">
-              Made to wear. <em>Made yours.</em>
+              {content.hero_title} <em>{content.hero_accent}</em>
             </h1>
-            <p className="hero-sub">
-              Premium everyday pieces, made to be yours. Start clean, add your own design, and we deliver it to you.
-            </p>
+            <p className="hero-sub">{content.hero_sub}</p>
             <div className="hero-cta">
               <Link href="/shop" className="btn btn-lg">
                 Shop now

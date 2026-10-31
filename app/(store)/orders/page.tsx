@@ -7,6 +7,18 @@ import type { Order } from "@/lib/types";
 
 export const metadata = { title: "My orders · Nova Edge" };
 
+function friendly(o: Order) {
+  if (o.payment_status === "pending") return { text: "Waiting for payment", cls: "pending" };
+  if (o.payment_status === "refunded") return { text: "Refunded", cls: "cancelled" };
+  switch (o.fulfillment_status) {
+    case "printing": return { text: "Printing", cls: "printing" };
+    case "shipped": return { text: "On its way", cls: "shipped" };
+    case "delivered": return { text: "Delivered", cls: "delivered" };
+    case "cancelled": return { text: "Cancelled", cls: "cancelled" };
+    default: return { text: "Paid, getting ready to print", cls: "paid" };
+  }
+}
+
 export default async function OrdersPage() {
   const user = await requireUser("/orders");
   const supabase = await createClient();
@@ -14,7 +26,7 @@ export default async function OrdersPage() {
     .from("orders")
     .select("*, order_items(*)")
     .eq("user_id", user.id)
-    .neq("status", "cancelled")
+    .neq("payment_status", "failed")
     .order("created_at", { ascending: false });
   const orders = (data ?? []) as Order[];
 
@@ -28,14 +40,17 @@ export default async function OrdersPage() {
         </p>
       ) : (
         <ul className="order-list">
-          {orders.map((o) => (
+          {orders.map((o) => {
+            const st = friendly(o);
+            const subtotal = Number(o.subtotal ?? o.total);
+            return (
             <li key={o.id} className="order-card">
               <div className="order-head">
                 <div>
                   <strong>{o.reference}</strong>
                   <p className="muted">{shortDate(o.created_at)}</p>
                 </div>
-                <span className={`status status-${o.status}`}>{o.status}</span>
+                <span className={`status status-${st.cls}`}>{st.text}</span>
                 <strong>{naira(o.total)}</strong>
               </div>
               <ul className="order-items">
@@ -50,9 +65,15 @@ export default async function OrdersPage() {
                   </li>
                 ))}
               </ul>
-              {o.status === "pending" && <p className="form-note">Waiting for payment. If you already paid, this updates within a few minutes.</p>}
+              <p className="form-note">
+                Items {naira(subtotal)}
+                {Number(o.discount_amount) > 0 && ` · Discount${o.discount_code ? ` (${o.discount_code})` : ""} −${naira(o.discount_amount)}`}
+                {` · Delivery ${Number(o.delivery_fee) > 0 ? naira(o.delivery_fee) : "free"}`}
+              </p>
+              {o.payment_status === "pending" && <p className="form-note">Waiting for payment. If you already paid, this updates within a few minutes.</p>}
             </li>
-          ))}
+            );
+          })}
         </ul>
       )}
     </main>

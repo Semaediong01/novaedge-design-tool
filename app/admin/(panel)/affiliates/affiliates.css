@@ -1,0 +1,11 @@
+/* affiliates.css — affiliate screens */
+.af-code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700; letter-spacing: 0.06em; }
+.af-sub { display: block; color: var(--muted); font-size: 0.82rem; overflow-wrap: anywhere; }
+.af-code-input { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.08em; text-transform: uppercase; }
+.af-link-row { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
+.af-link { flex: 1 1 260px; min-width: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.88rem; overflow-wrap: anywhere; border: 1.5px solid var(--line); border-radius: 10px; padding: 0.5rem 0.8rem; background: var(--soft); }
+.af-stats { margin: 1rem 0; }
+.af-rules { margin: 0.25rem 0 0; padding-left: 1.2rem; display: grid; gap: 0.35rem; color: var(--text); }
+.af-section { margin-top: 1.25rem; }
+.af-pay { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+.af-notes { white-space: pre-wrap; overflow-wrap: anywhere; }

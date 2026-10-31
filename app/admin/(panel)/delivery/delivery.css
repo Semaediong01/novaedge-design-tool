@@ -1,0 +1,14 @@
+/* delivery.css — delivery zone screens */
+.dl-name { font-weight: 700; }
+.dl-sub { display: block; color: var(--muted); font-size: 0.82rem; max-width: 46ch; overflow-wrap: anywhere; }
+.dl-states { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 170px), 1fr)); gap: 0.4rem 1rem; border: 1.5px solid var(--line); border-radius: 10px; padding: 0.8rem 0.9rem; background: var(--surface); margin: 0.5rem 0; }
+.dl-state span { overflow-wrap: anywhere; }
+.dl-state small { color: var(--muted); }
+.dl-warn { border: 1.5px solid #f0dd8a; background: #fff3bf; color: #5c4a00; border-radius: 12px; padding: 0.85rem 1rem; margin-bottom: 1rem; display: grid; gap: 0.6rem; justify-items: start; }
+:root[data-theme="dark"] .dl-warn { background: #3a3210; border-color: #5a4c14; color: #f3df8a; }
+.dl-row-actions { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+.dl-create { display: flex; gap: 0.6rem; align-items: end; flex-wrap: wrap; }
+.dl-create .field-group { flex: 1 1 160px; }
+.dl-section { margin-top: 1.5rem; }
+.dl-note { margin-top: 1rem; }
+.dl-locked { color: var(--muted); }

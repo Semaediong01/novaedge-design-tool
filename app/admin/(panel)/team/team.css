@@ -1,0 +1,8 @@
+/* team.css */
+.tm-filters .field { min-width: 0; }
+.tm-detail { color: var(--muted); font-size: 0.85rem; word-break: break-word; }
+.tm-pager { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; margin-top: 1rem; flex-wrap: wrap; }
+.tm-pager a, .tm-pager span.off { font-weight: 600; font-size: 0.9rem; }
+.tm-pager span.off { color: var(--muted); }
+.tm-check { margin: 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.4rem; }
+.tm-section { margin-top: 1.5rem; }
