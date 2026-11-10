@@ -20,6 +20,7 @@ const GROUPS: { label: string; links: { href: string; label: string }[] }[] = [
       { href: "/admin/sections", label: "Sections" },
       { href: "/admin/homepage", label: "Home page" },
       { href: "/admin/templates", label: "Design templates" },
+      { href: "/admin/print-sizes", label: "Print sizes" },
     ],
   },
   {

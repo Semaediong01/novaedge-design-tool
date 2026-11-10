@@ -38,3 +38,18 @@
 }
 
 .ord-addresses { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.8rem; }
+
+/* Full-garment preview and print-size readout */
+.tfp { position: relative; width: 260px; max-width: 100%; aspect-ratio: 1; border: 1px solid var(--line); border-radius: 10px; background: #e9ece8; overflow: hidden; }
+.tfp img { position: absolute; display: block; }
+.tfp .tfp-layer { inset: 0; width: 100%; height: 100%; }
+.tfp .tfp-art { object-fit: contain; }
+.ord-art figure.ord-wide { max-width: 260px; }
+.ord-printspec { margin-top: 0.6rem; font-size: 0.88rem; display: flex; flex-direction: column; gap: 0.2rem; max-width: 44ch; }
+.ord-printspec strong { color: var(--ink); }
+.ord-dpi-good { color: var(--accent); font-weight: 700; }
+.ord-dpi-ok { color: #8a6d00; font-weight: 700; }
+.ord-dpi-low { color: var(--danger); font-weight: 700; }
+/* The tee preview stacks transparent layers, so none of them may inherit the artwork-thumbnail look */
+.ord-art .tfp img { background: none; border: 0; border-radius: 0; aspect-ratio: auto; max-width: none; }
+.ord-art .tfp .tfp-layer { width: 100%; height: 100%; }

@@ -294,10 +294,19 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
     return dataUrl;
   };
 
-  // Garment-free, transparent artwork at ~4x. Never blocks saving: any failure just means no production file.
+  // Garment-free, transparent artwork. Printers want about 150+ dpi, so we export as sharp as the device allows
+  // (12 pixels per design unit = 2640 x 3600 px) and step down on phones that can't make a canvas that large.
+  // Never blocks saving: any failure just means no production file.
   const exportProduction = async (designIdValue: string): Promise<string | null> => {
     try {
-      const dataUrl = snapshot({ ratio: 4, crop: true, hideGarment: true });
+      let dataUrl: string | null = null;
+      for (const ratio of [12, 8, 5, 3]) {
+        const shot = snapshot({ ratio, crop: true, hideGarment: true });
+        if (shot && shot.length > 2000) {
+          dataUrl = shot;
+          break;
+        }
+      }
       if (!dataUrl) return null;
       const blob = await (await fetch(dataUrl)).blob();
       const supabase = createClient();

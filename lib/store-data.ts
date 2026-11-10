@@ -54,3 +54,11 @@ export async function getTemplates(category?: string): Promise<Template[]> {
   const { data } = await q;
   return (data ?? []) as Template[];
 }
+
+/** Print width (cm) for each garment size, set in Admin -> Print sizes. */
+export async function getPrintWidths() {
+  const { cleanWidths } = await import("@/lib/print-sizes");
+  const supabase = await createClient();
+  const { data } = await supabase.from("site_settings").select("value").eq("key", "print_sizes").maybeSingle();
+  return cleanWidths((data?.value as { widths_cm?: unknown } | null)?.widths_cm);
+}
