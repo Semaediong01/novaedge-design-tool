@@ -4,6 +4,9 @@ import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { naira } from "@/lib/format";
+import { getPrintWidths } from "@/lib/store-data";
+import { dpiFor, dpiVerdict, pngSize, printSizeFor } from "@/lib/print-sizes";
+import TeeFullPreview from "@/components/admin/TeeFullPreview";
 import { FULFILLMENT_STATUSES, type Order } from "@/lib/types";
 import { UUID_RE, fulfillmentTone, paymentTone } from "../shared";
 import { markRefunded, recheckPayment, saveNote, setFulfillment } from "./actions";
@@ -30,6 +33,18 @@ const ERRORS: Record<string, string> = {
   save: "Couldn't save. Try again.",
 };
 
+/** Reads a PNG's pixel size from the first bytes of the stored file (only from our own storage). */
+async function artworkPixels(url: string | null) {
+  if (!url || !process.env.NEXT_PUBLIC_SUPABASE_URL || !url.startsWith(process.env.NEXT_PUBLIC_SUPABASE_URL)) return null;
+  try {
+    const res = await fetch(url, { headers: { Range: "bytes=0-63" }, cache: "no-store" });
+    if (!res.ok) return null;
+    return pngSize(new Uint8Array(await res.arrayBuffer()));
+  } catch {
+    return null;
+  }
+}
+
 const dateTime = (iso: string) => new Date(iso).toLocaleString("en-NG", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
 export default async function AdminOrderDetail({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ saved?: string; error?: string }> }) {
@@ -44,6 +59,8 @@ export default async function AdminOrderDetail({ params, searchParams }: { param
   const o = data as Order;
   const items = o.order_items ?? [];
   const sh = o.shipping;
+  const widths = await getPrintWidths();
+  const pixels = await Promise.all(items.map((i) => artworkPixels(i.production_url)));
 
   const paid = o.payment_status === "paid";
   const unpaid = o.payment_status === "pending" || o.payment_status === "failed";
@@ -121,7 +138,11 @@ export default async function AdminOrderDetail({ params, searchParams }: { param
               </tr>
             </thead>
             <tbody>
-              {items.map((i) => {
+              {items.map((i, idx) => {
+                const px = pixels[idx];
+                const spec = printSizeFor(i.size, widths);
+                const dpi = px && spec ? dpiFor(px.width, spec.width) : null;
+                const verdict = dpi ? dpiVerdict(dpi) : null;
                 const line = Number(i.unit_price) * i.quantity;
                 const custom = Boolean(i.design_id || i.design_elements);
                 return (
@@ -134,6 +155,12 @@ export default async function AdminOrderDetail({ params, searchParams }: { param
                       {i.title} {custom && <span className="ad-badge info">custom</span>}
                       {(i.print_url || i.production_url) && (
                         <div className="ord-art">
+                          {(i.production_url || i.print_url) && (
+                            <figure className="ord-wide">
+                              <TeeFullPreview color={i.color} artUrl={(i.production_url ?? i.print_url) as string} alt={`${i.title} with the customer's design placed on it`} />
+                              <figcaption>Whole tee: where the design sits</figcaption>
+                            </figure>
+                          )}
                           {i.print_url && (
                             <figure>
                               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -150,9 +177,24 @@ export default async function AdminOrderDetail({ params, searchParams }: { param
                               <img src={i.production_url} alt={`Production artwork for ${i.title}`} className="ord-checker" />
                               <figcaption>
                                 Transparent artwork<br />
-                                <a href={i.production_url} download target="_blank" rel="noreferrer" className="text-link">Download production artwork</a>
+                                <Link href={`/admin/orders/${o.id}/artwork/${i.id}`} prefetch={false} className="text-link">Download print-ready artwork{spec ? ` (${i.size})` : ""}</Link>
                               </figcaption>
                             </figure>
+                          )}
+                        </div>
+                      )}
+                      {i.production_url && (
+                        <div className="ord-printspec">
+                          {spec ? (
+                            <span>Print size for {i.size}: <strong>{spec.width} × {spec.height} cm</strong></span>
+                          ) : (
+                            <span className="muted">No print size set for {i.size ?? "this size"}. Add it in <Link href="/admin/print-sizes" className="text-link">Print sizes</Link>.</span>
+                          )}
+                          {px && <span>Artwork file: {px.width} × {px.height} px</span>}
+                          {dpi && verdict && (
+                            <span>
+                              Sharpness at that size: <span className={`ord-dpi-${verdict}`}>{dpi} dpi, {verdict === "good" ? "good" : verdict === "ok" ? "acceptable" : "low, may print soft"}</span>
+                            </span>
                           )}
                         </div>
                       )}
