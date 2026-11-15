@@ -4,26 +4,33 @@
 
 import Link from "next/link";
 import { useState, useRef, useEffect, useMemo } from "react";
-import { Stage, Layer, Image as KonvaImage, Text, Rect, Circle, Transformer } from "react-konva";
+import { Stage, Layer, Image as KonvaImage, Text, Rect, Circle, Shape, Transformer } from "react-konva";
 import useImage from "use-image";
-import { Type, Square, Circle as CircleIcon, ImagePlus, Trash2, Loader2, Check, Download, ShoppingCart, RotateCcw, LayoutTemplate } from "lucide-react";
+import { Type, Square, Circle as CircleIcon, ImagePlus, Trash2, Loader2, Check, Download, ShoppingCart, RotateCcw, LayoutTemplate, Sparkles, Frame as FrameIcon, Shapes } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useCart } from "@/components/CartProvider";
 import { naira } from "@/lib/format";
 import { variantSoldOut } from "@/lib/pricing";
 import {
   MONO_RATIO, SYMBOL_DEFAULT, SYMBOL_MAX, SYMBOL_MIN, TEE_PRINT_AREA,
-  symbolSrc, teeColorKey, teeLayers,
+  symbolSrc, teeColorHex, teeColorKey, teeLayers,
   type SymbolTone, type TeeColor,
 } from "@/lib/mockups";
+import { DESIGN_FONTS, DEFAULT_FONT, cssFamily, fontOf, loadFonts, warmFonts } from "@/lib/fonts";
+import { STICKERS, stickerSrc } from "@/lib/stickers";
+import { FRAME_SHAPES, coverFit, frameClip, frameThumbPath, type FrameShape } from "@/lib/frames";
 import "@/components/mockups/mockups.css";
 
 type ElementBase = { id: string; x: number; y: number; rotation: number };
-type TextEl = ElementBase & { type: "text"; text: string; fontSize: number; fill: string };
+type TextEl = ElementBase & { type: "text"; text: string; fontSize: number; fill: string; fontFamily?: string; bold?: boolean };
 type ImageEl = ElementBase & { type: "image"; src: string; width: number; height: number };
 type ShapeEl = ElementBase & { type: "rect" | "circle"; width: number; height: number; fill: string };
 type SymbolEl = ElementBase & { type: "symbol"; width: number; tone: SymbolTone };
-type DesignElement = TextEl | ImageEl | ShapeEl | SymbolEl;
+type StickerEl = ElementBase & { type: "sticker"; key: string; width: number; fill: string };
+/** A shape that crops a photo. `zoom` >= 1; `offX`/`offY` (-1..1) slide the photo inside the frame. */
+type FrameEl = ElementBase & { type: "frame"; shape: FrameShape; width: number; height: number; src: string | null; zoom: number; offX: number; offY: number };
+type DesignElement = TextEl | ImageEl | ShapeEl | SymbolEl | StickerEl | FrameEl;
+type Tab = "text" | "graphics" | "frames" | "upload" | "shapes" | "templates";
 
 export type TemplateOption = { id: string; title: string; preview_url: string | null; elements: unknown[] };
 
@@ -59,7 +66,7 @@ type Props = {
   templateDraft?: TemplateDraft;
 };
 
-const ELEMENT_TYPES = new Set(["text", "image", "rect", "circle", "symbol"]);
+const ELEMENT_TYPES = new Set(["text", "image", "rect", "circle", "symbol", "sticker", "frame"]);
 const newElementId = () => "e" + crypto.randomUUID().replace(/-/g, "");
 
 const LOGICAL_SIZE = 500;
@@ -105,6 +112,74 @@ function SymbolNode({ el, color, clamp, onSelect, onChange }: { el: SymbolEl; co
         const node = ref.current;
         onChange({ ...el, x: node.x(), y: node.y(), rotation: node.rotation(), width: Math.min(SYMBOL_MAX, Math.max(SYMBOL_MIN, node.width() * node.scaleX())) });
         node.scaleX(1); node.scaleY(1);
+      }}
+    />
+  );
+}
+
+function StickerNode({ el, clamp, onSelect, onChange }: { el: StickerEl; clamp: any; onSelect: () => void; onChange: (el: StickerEl) => void }) {
+  const [image] = useImage(stickerSrc(el.key, el.fill), "anonymous");
+  const ref = useRef<any>(null);
+  return (
+    <KonvaImage
+      ref={ref}
+      image={image}
+      name={el.id}
+      x={el.x} y={el.y} width={el.width} height={el.width} rotation={el.rotation}
+      draggable dragBoundFunc={clamp}
+      onClick={onSelect} onTap={onSelect}
+      onDragEnd={(e: any) => onChange({ ...el, x: e.target.x(), y: e.target.y() })}
+      onTransformEnd={() => {
+        const node = ref.current;
+        onChange({ ...el, x: node.x(), y: node.y(), rotation: node.rotation(), width: Math.max(12, node.width() * node.scaleX()) });
+        node.scaleX(1); node.scaleY(1);
+      }}
+    />
+  );
+}
+
+/** A frame: the photo is drawn inside the frame's outline, covering it. Empty frames show a placeholder that never prints. */
+function FrameNode({ el, clamp, onSelect, onChange }: { el: FrameEl; clamp: any; onSelect: () => void; onChange: (el: FrameEl) => void }) {
+  const [image] = useImage(el.src ?? "", "anonymous");
+  const ref = useRef<any>(null);
+  const filled = Boolean(el.src && image);
+  return (
+    <Shape
+      ref={ref}
+      name={filled || el.src ? el.id : `${el.id} placeholder`}
+      x={el.x} y={el.y} width={el.width} height={el.height} rotation={el.rotation}
+      fill="#E6EAE6"
+      draggable dragBoundFunc={clamp}
+      onClick={onSelect} onTap={onSelect}
+      onDragEnd={(e: any) => onChange({ ...el, x: e.target.x(), y: e.target.y() })}
+      onTransformEnd={() => {
+        const node = ref.current;
+        onChange({ ...el, x: node.x(), y: node.y(), rotation: node.rotation(), width: Math.max(30, node.width() * node.scaleX()), height: Math.max(30, node.height() * node.scaleY()) });
+        node.scaleX(1); node.scaleY(1);
+      }}
+      sceneFunc={(ctx: any, shape: any) => {
+        frameClip(ctx, el.shape, el.width, el.height);
+        if (filled && image) {
+          const fit = coverFit(image.width, image.height, el.width, el.height, el.zoom, el.offX, el.offY);
+          ctx.save();
+          ctx.clip();
+          ctx.drawImage(image, fit.x, fit.y, fit.width, fit.height);
+          ctx.restore();
+        } else if (!el.src) {
+          ctx.fillShape(shape);
+          const c = ctx._context as CanvasRenderingContext2D;
+          c.save();
+          c.fillStyle = "#6B756B";
+          c.font = "600 13px sans-serif";
+          c.textAlign = "center";
+          c.textBaseline = "middle";
+          c.fillText("Add photo", el.width / 2, el.height / 2);
+          c.restore();
+        }
+      }}
+      hitFunc={(ctx: any, shape: any) => {
+        frameClip(ctx, el.shape, el.width, el.height);
+        ctx.fillShape(shape);
       }}
     />
   );
@@ -163,7 +238,6 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
   const [tplTitle, setTplTitle] = useState(templateDraft?.title ?? "");
   const [tplCategory, setTplCategory] = useState(templateDraft?.category ?? "T-Shirts");
   const [templateId, setTemplateId] = useState<string | null>(templateDraft?.id ?? null);
-  const [templatesOpen, setTemplatesOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [designId, setDesignId] = useState<string | null>(initialDesign?.id ?? null);
   const [printUrl, setPrintUrl] = useState<string | null>(initialDesign?.printUrl ?? null);
@@ -176,6 +250,9 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
   const [cartStatus, setCartStatus] = useState<string>("");
   const [added, setAdded] = useState(false);
   const [scale, setScale] = useState(1);
+  const [tab, setTab] = useState<Tab>("text");
+  const [fontTick, setFontTick] = useState(0);
+  const [uploads, setUploads] = useState<string[]>([]);
 
   const transformerRef = useRef<any>(null);
   const stageRef = useRef<any>(null);
@@ -184,6 +261,8 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
   const propertiesBarRef = useRef<HTMLDivElement>(null);
   const symbolPanelRef = useRef<HTMLDivElement>(null);
   const toolRailRef = useRef<HTMLDivElement>(null);
+  const drawerRef = useRef<HTMLDivElement>(null);
+  const framePhotoRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     function updateScale() {
@@ -207,7 +286,7 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
   useEffect(() => {
     attachTransformer();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedId, elements]);
+  }, [selectedId, elements, fontTick]);
 
   // Click anywhere that isn't the canvas, the properties bar, or the tool rail clears the selection.
   useEffect(() => {
@@ -215,7 +294,7 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
       const target = e.target as Node;
       const insideCanvas = canvasWrapRef.current?.contains(target);
       const insidePanel = propertiesBarRef.current?.contains(target) || symbolPanelRef.current?.contains(target);
-      const insideRail = toolRailRef.current?.contains(target);
+      const insideRail = toolRailRef.current?.contains(target) || drawerRef.current?.contains(target);
       if (!insideCanvas && !insidePanel && !insideRail) {
         setSelectedId(null);
       }
@@ -227,21 +306,64 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
   const updateElement = (updated: DesignElement) =>
     setElements((els) => els.map((el) => (el.id === updated.id ? updated : el)));
 
-  // New text and shapes start in a colour that shows up on the chosen garment.
-  const newFill = isTee && colorKey === "black" ? "#FFFFFF" : DEFAULT_FILL;
+  // Fonts: load the ones this design uses, then redraw the text once they're ready.
+  const fontUses = useMemo(
+    () => elements.filter((el): el is TextEl => el.type === "text").map((el) => ({ name: el.fontFamily, bold: el.bold })),
+    [elements]
+  );
+  const fontKey = fontUses.map((u) => `${u.name ?? ""}:${u.bold ? 1 : 0}`).join("|");
+  useEffect(() => {
+    let live = true;
+    loadFonts(fontUses).then(() => live && setFontTick((t) => t + 1));
+    return () => { live = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fontKey]);
+  useEffect(() => {
+    if (tab === "text") warmFonts();
+  }, [tab]);
 
-  const addText = () =>
-    setElements((els) => [...els, { id: newElementId(), type: "text", text: "New Text", x: 170, y: 220, rotation: 0, fontSize: 28, fill: newFill }]);
+  // Selecting something opens the matching tool drawer, like Printify's side panel.
+  const selectEl = (el: { id: string; type: string }) => {
+    setSelectedId(el.id);
+    if (el.type === "text") setTab("text");
+    else if (el.type === "frame") setTab("frames");
+    else if (el.type === "sticker") setTab("graphics");
+  };
+
+  // New text and shapes start in a colour that shows up on the chosen garment.
+  const newFill = isTee && ["black", "navy", "royal", "forest", "red", "maroon"].includes(colorKey) ? "#FFFFFF" : DEFAULT_FILL;
+
+  const CENTER = { x: area.x + area.width / 2, y: area.y + area.height / 2 };
+  const addAndSelect = (el: DesignElement) => {
+    setElements((els) => [...els, el]);
+    selectEl(el);
+  };
+
+  const addText = (preset: { text: string; fontSize: number; fontFamily: string; bold?: boolean } = { text: "New Text", fontSize: 28, fontFamily: DEFAULT_FONT, bold: true }) =>
+    addAndSelect({ id: newElementId(), type: "text", text: preset.text, x: CENTER.x - 70, y: CENTER.y - 20, rotation: 0, fontSize: preset.fontSize, fill: newFill, fontFamily: preset.fontFamily, bold: preset.bold });
 
   const addShape = (type: "rect" | "circle") =>
-    setElements((els) => [...els, { id: newElementId(), type, x: 170, y: 170, rotation: 0, width: 100, height: 100, fill: newFill }]);
+    addAndSelect({ id: newElementId(), type, x: CENTER.x - 50, y: CENTER.y - 50, rotation: 0, width: 100, height: 100, fill: newFill });
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-    if (!file.type.startsWith("image/")) return setSaveStatus("Choose an image file.");
-    if (file.size > 8 * 1024 * 1024) return setSaveStatus("Image is over 8 MB. Pick a smaller one.");
+  const addSticker = (key: string) =>
+    addAndSelect({ id: newElementId(), type: "sticker", key, x: CENTER.x - 35, y: CENTER.y - 35, rotation: 0, width: 70, fill: newFill });
+
+  const addFrame = (shape: FrameShape) =>
+    addAndSelect({ id: newElementId(), type: "frame", shape, x: CENTER.x - 75, y: CENTER.y - 75, rotation: 0, width: 150, height: shape === "arch" ? 190 : 150, src: null, zoom: 1, offX: 0, offY: 0 });
+
+  const chooseFont = (name: string) => {
+    const el = elements.find((e) => e.id === selectedId);
+    if (!el || el.type !== "text") return;
+    const font = fontOf(name);
+    updateElement({ ...el, fontFamily: name, bold: font?.bold ? el.bold : false });
+    loadFonts([{ name, bold: el.bold }]).then(() => setFontTick((t) => t + 1));
+  };
+
+  // Uploads a customer photo (or an admin image in template mode) and returns its public URL.
+  const uploadImage = async (file: File | undefined): Promise<string | null> => {
+    if (!file) return null;
+    if (!file.type.startsWith("image/")) { setSaveStatus("Choose an image file."); return null; }
+    if (file.size > 8 * 1024 * 1024) { setSaveStatus("Image is over 8 MB. Pick a smaller one."); return null; }
 
     setSaveStatus("Uploading image…");
     const supabase = createClient();
@@ -250,11 +372,31 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
     const ext = (file.name.split(".").pop() ?? "png").toLowerCase().replace(/[^a-z0-9]/g, "") || "png";
     const path = isTemplateMode ? `templates/${crypto.randomUUID()}.${ext}` : `${userId}/${crypto.randomUUID()}.${ext}`;
     const { error } = await supabase.storage.from(bucket).upload(path, file, { contentType: file.type });
-    if (error) return setSaveStatus("Upload failed. Try again.");
-
-    const url = supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl;
-    setElements((els) => [...els, { id: newElementId(), type: "image", src: url, x: 170, y: 170, rotation: 0, width: 150, height: 150 }]);
+    if (error) { setSaveStatus("Upload failed. Try again."); return null; }
     setSaveStatus("");
+    return supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl;
+  };
+
+  const placeImage = (url: string) =>
+    addAndSelect({ id: newElementId(), type: "image", src: url, x: CENTER.x - 75, y: CENTER.y - 75, rotation: 0, width: 150, height: 150 });
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    const url = await uploadImage(file);
+    if (!url) return;
+    setUploads((u) => [url, ...u]);
+    placeImage(url);
+  };
+
+  const handleFramePhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    const target = elements.find((el) => el.id === selectedId);
+    if (!target || target.type !== "frame") return;
+    const url = await uploadImage(file);
+    if (!url) return;
+    setElements((els) => els.map((el) => (el.id === target.id && el.type === "frame" ? { ...el, src: url, zoom: 1, offX: 0, offY: 0 } : el)));
   };
 
   const deleteSelected = () => {
@@ -269,7 +411,7 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
     const guide = guideRectRef.current;
     if (!stage || !guide) return null;
 
-    const garments: any[] = opts.hideGarment ? stage.find(".garment") : [];
+    const garments: any[] = [...(opts.hideGarment ? stage.find(".garment") : []), ...stage.find(".placeholder")];
     guide.visible(false);
     garments.forEach((n) => n.visible(false));
     transformerRef.current?.nodes([]);
@@ -334,6 +476,7 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
     setSaveStatus("");
     setCartStatus("");
     try {
+      await loadFonts(fontUses); // text must be drawn in its real font before the print file is made
       const dataUrl = capturePrintReady();
       if (!dataUrl) throw new Error("The canvas isn't ready yet.");
 
@@ -426,7 +569,6 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
     if (hasOwnWork && !window.confirm("Replace what's on the shirt with this template? Your current design will be lost.")) return;
     setElements(fromTemplate(tpl.elements));
     setSelectedId(null);
-    setTemplatesOpen(false);
   };
 
   const symbolEl = elements.find((el) => el.type === "symbol") as SymbolEl | undefined;
@@ -448,7 +590,9 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
     updateElement({ ...symbolEl, width: w, x: symbolEl.x + (symbolEl.width - w) / 2, y: symbolEl.y + (oldH - newH) / 2 });
   };
 
-  const selectedEl = elements.find((el) => el.id === selectedId && el.type !== "symbol" && el.type !== "image") as TextEl | ShapeEl | undefined;
+  const selectedEl = elements.find((el) => el.id === selectedId && el.type !== "symbol" && el.type !== "image") as TextEl | ShapeEl | StickerEl | FrameEl | undefined;
+  const selectedText = selectedEl?.type === "text" ? selectedEl : undefined;
+  const selectedFrame = selectedEl?.type === "frame" ? selectedEl : undefined;
 
   return (
     <div className="workspace">
@@ -484,12 +628,18 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
           </div>
         )}
         {product.colors.length > 0 && (
-          <div className="option-row" role="group" aria-label="Color">
-            {product.colors.map((c) => (
-              <button key={c} type="button" className={`chip${c === color ? " active" : ""}`} aria-pressed={c === color} onClick={() => setColor(c)}>
-                {c}
-              </button>
-            ))}
+          <div className="swatch-row" role="group" aria-label="Color">
+            {product.colors.map((c) => {
+              const hex = isTee ? teeColorHex(c) : null;
+              return hex ? (
+                <button key={c} type="button" className={`color-dot${c === color ? " active" : ""}`} style={{ background: hex }} title={c} aria-label={c} aria-pressed={c === color} onClick={() => setColor(c)} />
+              ) : (
+                <button key={c} type="button" className={`chip${c === color ? " active" : ""}`} aria-pressed={c === color} onClick={() => setColor(c)}>
+                  {c}
+                </button>
+              );
+            })}
+            <span className="swatch-name">{color}</span>
           </div>
         )}
       </div>
@@ -497,21 +647,18 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
       <div className="workspace-grid">
         {/* Tool rail */}
         <div className="workspace-rail tool-rail" ref={toolRailRef}>
-          <button className="tool-btn" onClick={addText}>
-            <Type size={18} /> Text
-          </button>
-          <button className="tool-btn" onClick={() => addShape("rect")}>
-            <Square size={18} /> Box
-          </button>
-          <button className="tool-btn" onClick={() => addShape("circle")}>
-            <CircleIcon size={18} /> Circle
-          </button>
-          {uploadsAllowed && (
-            <label className="tool-btn" style={{ cursor: "pointer" }}>
-              <ImagePlus size={18} /> Upload
-              <input type="file" accept="image/*" onChange={handleFileUpload} style={{ display: "none" }} />
-            </label>
-          )}
+          {([
+            ["text", "Text", Type],
+            ["graphics", "Graphics", Sparkles],
+            ["frames", "Frames", FrameIcon],
+            ...(uploadsAllowed ? [["upload", "Upload", ImagePlus]] : []),
+            ["shapes", "Shapes", Shapes],
+            ...(!isTemplateMode && templates.length > 0 ? [["templates", "Templates", LayoutTemplate]] : []),
+          ] as [Tab, string, typeof Type][]).map(([key, label, Icon]) => (
+            <button key={key} type="button" className={`tool-btn${tab === key ? " tool-btn-on" : ""}`} aria-pressed={tab === key} onClick={() => setTab(key)}>
+              <Icon size={18} /> {label}
+            </button>
+          ))}
           {selectedId && (
             <button className="tool-btn danger" onClick={deleteSelected}>
               <Trash2 size={18} /> Delete
@@ -533,33 +680,136 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
           {saveStatus && <p className="save-status" role="status">{saveStatus}</p>}
         </div>
 
-        {/* Canvas + properties */}
-        <div className="workspace-canvas">
-          {soldOut && <p className="form-note" role="status">{color} in {size} is sold out. Pick another size or colour.</p>}
-          {!isTemplateMode && templates.length > 0 && (
-            <div className="template-picker">
-              <button type="button" className="btn btn-sm btn-ghost" onClick={() => setTemplatesOpen((o) => !o)} aria-expanded={templatesOpen}>
-                <LayoutTemplate size={15} /> Start from a template
-              </button>
-              {templatesOpen && (
-                <ul className="template-grid">
-                  {templates.map((t) => (
-                    <li key={t.id}>
-                      <button type="button" className="template-card" onClick={() => pickTemplate(t)}>
-                        {t.preview_url ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={t.preview_url} alt="" loading="lazy" />
-                        ) : (
-                          <span className="template-card-empty">No preview</span>
-                        )}
-                        <span>{t.title}</span>
+        {/* Tool drawer: what the chosen tool offers */}
+        <div className="tool-drawer" ref={drawerRef}>
+          {tab === "text" && (
+            <>
+              <h2 className="drawer-title">Text</h2>
+              <div className="drawer-stack">
+                <button type="button" className="btn btn-sm" onClick={() => addText({ text: "HEADING", fontSize: 44, fontFamily: "Bebas Neue" })}>Add a heading</button>
+                <button type="button" className="btn btn-sm btn-ghost" onClick={() => addText({ text: "Subheading", fontSize: 28, fontFamily: "Montserrat", bold: true })}>Add a subheading</button>
+                <button type="button" className="btn btn-sm btn-ghost" onClick={() => addText({ text: "Your text", fontSize: 20, fontFamily: "Montserrat" })}>Add body text</button>
+              </div>
+              {selectedText ? (
+                <>
+                  <h3 className="drawer-sub">Font</h3>
+                  <ul className="font-list">
+                    {DESIGN_FONTS.map((f) => (
+                      <li key={f.name}>
+                        <button type="button" className={`font-btn${(selectedText.fontFamily ?? "") === f.name ? " active" : ""}`} style={{ fontFamily: cssFamily(f.name) }} onClick={() => chooseFont(f.name)}>
+                          {f.name}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : (
+                <p className="drawer-note">Add text, or tap a text on the shirt to change its font.</p>
+              )}
+            </>
+          )}
+
+          {tab === "graphics" && (
+            <>
+              <h2 className="drawer-title">Graphics</h2>
+              <p className="drawer-note">Small designs to add to your tee. Tap one to place it, then change its colour.</p>
+              <ul className="thumb-grid">
+                {STICKERS.map((st) => (
+                  <li key={st.key}>
+                    <button type="button" className="thumb-btn" title={st.name} aria-label={`Add ${st.name}`} onClick={() => addSticker(st.key)}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={stickerSrc(st.key, "#1E3A1C")} alt="" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+
+          {tab === "frames" && (
+            <>
+              <h2 className="drawer-title">Photo frames</h2>
+              <p className="drawer-note">{selectedFrame ? "Tap a shape to change this frame." : "Tap a shape to add a frame, then add your photo into it."}</p>
+              <ul className="thumb-grid">
+                {FRAME_SHAPES.map((fr) => (
+                  <li key={fr.key}>
+                    <button
+                      type="button"
+                      className={`thumb-btn${selectedFrame?.shape === fr.key ? " active" : ""}`}
+                      title={fr.name}
+                      aria-label={`${selectedFrame ? "Change to" : "Add"} ${fr.name} frame`}
+                      onClick={() => (selectedFrame ? updateElement({ ...selectedFrame, shape: fr.key }) : addFrame(fr.key))}
+                    >
+                      <svg viewBox="0 0 100 100" aria-hidden="true"><path d={frameThumbPath(fr.key)} fill="#C9D6C8" stroke="#1E3A1C" strokeWidth="3" /></svg>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              {selectedFrame && (
+                <button type="button" className="btn btn-sm btn-ghost" onClick={() => addFrame(selectedFrame.shape)}>Add another frame</button>
+              )}
+            </>
+          )}
+
+          {tab === "upload" && uploadsAllowed && (
+            <>
+              <h2 className="drawer-title">Upload</h2>
+              <label className="btn btn-sm" style={{ cursor: "pointer" }}>
+                <ImagePlus size={15} /> Upload an image
+                <input type="file" accept="image/*" onChange={handleFileUpload} style={{ display: "none" }} />
+              </label>
+              <p className="drawer-note">PNG or JPG up to 8 MB. Larger, sharper pictures print better. To crop a photo into a shape, use Frames.</p>
+              {uploads.length > 0 && (
+                <ul className="thumb-grid">
+                  {uploads.map((u) => (
+                    <li key={u}>
+                      <button type="button" className="thumb-btn" aria-label="Add this image again" onClick={() => placeImage(u)}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={u} alt="" />
                       </button>
                     </li>
                   ))}
                 </ul>
               )}
-            </div>
+            </>
           )}
+
+          {tab === "shapes" && (
+            <>
+              <h2 className="drawer-title">Shapes</h2>
+              <div className="drawer-stack">
+                <button type="button" className="btn btn-sm btn-ghost" onClick={() => addShape("rect")}><Square size={15} /> Box</button>
+                <button type="button" className="btn btn-sm btn-ghost" onClick={() => addShape("circle")}><CircleIcon size={15} /> Circle</button>
+              </div>
+            </>
+          )}
+
+          {tab === "templates" && !isTemplateMode && (
+            <>
+              <h2 className="drawer-title">Templates</h2>
+              <p className="drawer-note">Start from a ready-made design.</p>
+              <ul className="template-grid">
+                {templates.map((t) => (
+                  <li key={t.id}>
+                    <button type="button" className="template-card" onClick={() => pickTemplate(t)}>
+                      {t.preview_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={t.preview_url} alt="" loading="lazy" />
+                      ) : (
+                        <span className="template-card-empty">No preview</span>
+                      )}
+                      <span>{t.title}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </div>
+
+        {/* Canvas + properties */}
+        <div className="workspace-canvas">
+          {soldOut && <p className="form-note" role="status">{color} in {size} is sold out. Pick another size or colour.</p>}
           <div className="canvas-frame">
             <div className="canvas-inner" ref={canvasWrapRef}>
               <Stage
@@ -578,8 +828,8 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
                     const commonProps = {
                       draggable: true,
                       dragBoundFunc: clampDrag,
-                      onClick: () => setSelectedId(el.id),
-                      onTap: () => setSelectedId(el.id),
+                      onClick: () => selectEl(el),
+                      onTap: () => selectEl(el),
                       onDragEnd: (e: any) => updateElement({ ...el, x: e.target.x(), y: e.target.y() }),
                       name: el.id,
                     };
@@ -587,9 +837,10 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
                     if (el.type === "text") {
                       return (
                         <Text
-                          key={el.id}
                           {...commonProps}
+                          key={`${el.id}-${fontTick}`}
                           text={el.text} x={el.x} y={el.y} fontSize={el.fontSize} fill={el.fill} rotation={el.rotation}
+                          fontFamily={cssFamily(el.fontFamily)} fontStyle={el.bold ? "bold" : "normal"}
                           onTransformEnd={(e: any) => {
                             const node = e.target;
                             updateElement({ ...el, x: node.x(), y: node.y(), rotation: node.rotation(), fontSize: Math.round(el.fontSize * node.scaleX()) });
@@ -599,10 +850,16 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
                       );
                     }
                     if (el.type === "symbol") {
-                      return <SymbolNode key={el.id} el={el} color={colorKey} clamp={clampDrag} onSelect={() => setSelectedId(el.id)} onChange={updateElement as (e: SymbolEl) => void} />;
+                      return <SymbolNode key={el.id} el={el} color={colorKey} clamp={clampDrag} onSelect={() => selectEl(el)} onChange={updateElement as (e: SymbolEl) => void} />;
+                    }
+                    if (el.type === "sticker") {
+                      return <StickerNode key={el.id} el={el} clamp={clampDrag} onSelect={() => selectEl(el)} onChange={updateElement as (e: StickerEl) => void} />;
+                    }
+                    if (el.type === "frame") {
+                      return <FrameNode key={el.id} el={el} clamp={clampDrag} onSelect={() => selectEl(el)} onChange={updateElement as (e: FrameEl) => void} />;
                     }
                     if (el.type === "image") {
-                      return <UploadedImage key={el.id} el={el} clamp={clampDrag} onSelect={() => setSelectedId(el.id)} onChange={updateElement} />;
+                      return <UploadedImage key={el.id} el={el} clamp={clampDrag} onSelect={() => selectEl(el)} onChange={updateElement} />;
                     }
                     if (el.type === "rect") {
                       return (
@@ -706,39 +963,81 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
 
           {selectedEl && (
             <div className="properties-bar" ref={propertiesBarRef}>
-              <div className="field-group">
-                <span className="panel-label">Color</span>
-                <input
-                  type="color" className="swatch"
-                  value={selectedEl.fill ?? DEFAULT_FILL}
-                  onChange={(e) => updateElement({ ...selectedEl, fill: e.target.value })}
-                />
-              </div>
-              {selectedEl.type === "text" && (
+              {selectedEl.type !== "frame" && (
+                <div className="field-group">
+                  <span className="panel-label">Color</span>
+                  <input
+                    type="color" className="swatch"
+                    value={selectedEl.fill ?? DEFAULT_FILL}
+                    onChange={(e) => updateElement({ ...selectedEl, fill: e.target.value })}
+                  />
+                </div>
+              )}
+              {selectedText && (
                 <>
                   <div className="field-group grow">
                     <span className="panel-label">Text</span>
                     <input
                       type="text" className="field"
-                      value={selectedEl.text ?? ""}
-                      onChange={(e) => updateElement({ ...selectedEl, text: e.target.value })}
+                      value={selectedText.text ?? ""}
+                      onChange={(e) => updateElement({ ...selectedText, text: e.target.value })}
                     />
                   </div>
                   <div className="field-group">
                     <span className="panel-label">Size</span>
                     <input
                       type="number" className="field" style={{ width: "70px" }}
-                      value={selectedEl.fontSize ?? 28}
-                      onChange={(e) => updateElement({ ...selectedEl, fontSize: Number(e.target.value) })}
+                      value={selectedText.fontSize ?? 28}
+                      onChange={(e) => updateElement({ ...selectedText, fontSize: Number(e.target.value) })}
                     />
                   </div>
+                  {(fontOf(selectedText.fontFamily)?.bold || !selectedText.fontFamily) && (
+                    <div className="field-group">
+                      <span className="panel-label">Style</span>
+                      <button type="button" className={`chip${selectedText.bold ? " active" : ""}`} aria-pressed={Boolean(selectedText.bold)} onClick={() => { updateElement({ ...selectedText, bold: !selectedText.bold }); loadFonts([{ name: selectedText.fontFamily, bold: !selectedText.bold }]).then(() => setFontTick((t) => t + 1)); }}>
+                        Bold
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+              {selectedFrame && (
+                <>
+                  <div className="field-group">
+                    <span className="panel-label">Photo</span>
+                    <div className="option-row">
+                      <button type="button" className="btn btn-sm" onClick={() => framePhotoRef.current?.click()}>
+                        <ImagePlus size={15} /> {selectedFrame.src ? "Change photo" : "Add photo"}
+                      </button>
+                      {selectedFrame.src && (
+                        <button type="button" className="btn btn-sm btn-ghost" onClick={() => updateElement({ ...selectedFrame, src: null, zoom: 1, offX: 0, offY: 0 })}>Remove photo</button>
+                      )}
+                    </div>
+                    <input ref={framePhotoRef} type="file" accept="image/*" onChange={handleFramePhoto} style={{ display: "none" }} />
+                  </div>
+                  {selectedFrame.src && (
+                    <>
+                      <label className="field-group grow">
+                        <span className="panel-label">Zoom</span>
+                        <input type="range" min={1} max={4} step={0.05} value={selectedFrame.zoom} onChange={(e) => updateElement({ ...selectedFrame, zoom: Number(e.target.value) })} />
+                      </label>
+                      <label className="field-group grow">
+                        <span className="panel-label">Move left / right</span>
+                        <input type="range" min={-1} max={1} step={0.02} value={selectedFrame.offX} onChange={(e) => updateElement({ ...selectedFrame, offX: Number(e.target.value) })} />
+                      </label>
+                      <label className="field-group grow">
+                        <span className="panel-label">Move up / down</span>
+                        <input type="range" min={-1} max={1} step={0.02} value={selectedFrame.offY} onChange={(e) => updateElement({ ...selectedFrame, offY: Number(e.target.value) })} />
+                      </label>
+                    </>
+                  )}
                 </>
               )}
             </div>
           )}
 
           {!selectedEl && !printPreview && !printUrl && (
-            <p className="empty-hint">Select an element on the shirt to edit its color, text, or size. Drag the corners to resize.</p>
+            <p className="empty-hint">Select something on the shirt to edit it. Drag the corners to resize.</p>
           )}
 
           {!isTemplateMode && (printPreview || printUrl) && (

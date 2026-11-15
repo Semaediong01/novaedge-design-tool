@@ -2,7 +2,25 @@
 // Geometry here mirrors the generator. Logical space is the designer's 500x500 canvas.
 import type { Product } from "@/lib/types";
 
-export type TeeColor = "white" | "ash" | "black";
+export type TeeColor = "white" | "ash" | "black" | "navy" | "royal" | "forest" | "red" | "maroon" | "sand";
+
+/** Every garment colour the store can show, in the order the pickers list them. `name` is what goes on the product. */
+export const TEE_COLOR_LIST: { key: TeeColor; name: string; hex: string }[] = [
+  { key: "white", name: "White", hex: "#F7F7F5" },
+  { key: "black", name: "Black", hex: "#181918" },
+  { key: "ash", name: "Ash", hex: "#ABAEAC" },
+  { key: "navy", name: "Navy", hex: "#1C2A4C" },
+  { key: "royal", name: "Royal Blue", hex: "#2654AA" },
+  { key: "forest", name: "Forest Green", hex: "#224D34" },
+  { key: "red", name: "Red", hex: "#BE262D" },
+  { key: "maroon", name: "Maroon", hex: "#641A26" },
+  { key: "sand", name: "Sand", hex: "#D6C4A4" },
+];
+export const TEE_COLOR_NAMES = TEE_COLOR_LIST.map((c) => c.name);
+export const teeColorHex = (name?: string | null): string | null => {
+  const key = teeColorKey(name);
+  return key ? (TEE_COLOR_LIST.find((c) => c.key === key)?.hex ?? null) : null;
+};
 export type SymbolTone = "auto" | "white" | "black" | "green";
 
 export const MONO_RATIO = 328 / 389; // height / width of the NE monogram files
@@ -15,16 +33,25 @@ export const SYMBOL_MIN = 10;
 export const SYMBOL_MAX = 120;
 
 /** How strongly the white highlight layer shows on each fabric colour. */
-const LIGHT_OPACITY: Record<TeeColor, number> = { white: 0, ash: 0.1, black: 0.55 };
+const LIGHT_OPACITY: Record<TeeColor, number> = { white: 0, ash: 0.1, black: 0.55, navy: 0.4, royal: 0.3, forest: 0.4, red: 0.25, maroon: 0.4, sand: 0.05 };
 /** Symbol colour chosen automatically for each garment colour. */
-const AUTO_TONE: Record<TeeColor, Exclude<SymbolTone, "auto">> = { white: "green", ash: "black", black: "white" };
+const AUTO_TONE: Record<TeeColor, Exclude<SymbolTone, "auto">> = { white: "green", ash: "black", black: "white", navy: "white", royal: "white", forest: "white", red: "white", maroon: "white", sand: "black" };
 
 /** Map a colour name from the admin (White, Jet Black, Heather Ash...) to a mockup colour. */
 export function teeColorKey(name?: string | null): TeeColor | null {
-  const n = (name ?? "").toLowerCase();
+  const n = (name ?? "").toLowerCase().trim();
+  if (!n) return null;
+  const exact = TEE_COLOR_LIST.find((c) => c.name.toLowerCase() === n || c.key === n);
+  if (exact) return exact.key;
   if (n.includes("white")) return "white";
   if (n.includes("black")) return "black";
   if (n.includes("ash") || n.includes("grey") || n.includes("gray") || n.includes("heather")) return "ash";
+  if (n.includes("navy")) return "navy";
+  if (n.includes("royal") || n.includes("blue")) return "royal";
+  if (n.includes("forest") || n.includes("green")) return "forest";
+  if (n.includes("maroon") || n.includes("burgundy") || n.includes("wine")) return "maroon";
+  if (/\bred\b/.test(n)) return "red";
+  if (n.includes("sand") || n.includes("beige") || n.includes("cream")) return "sand";
   return null;
 }
 

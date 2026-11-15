@@ -1,6 +1,7 @@
 // app/admin/(panel)/products/ProductForm.tsx — add / edit a product: photos, details, price and promo, commission, variants, personalization, visibility
 "use client";
 
+import { TEE_COLOR_LIST } from "@/lib/mockups";
 import { useActionState, useMemo, useRef, useState } from "react";
 import { Loader2, Trash2, Upload } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -231,6 +232,24 @@ export default function ProductForm({ product, sections }: { product?: Product; 
           <label className="field-group">
             <span className="panel-label">Colours, separated by commas</span>
             <input className="field" name="colors" value={colorsText} onChange={(e) => setColorsText(e.target.value)} placeholder="Black, White, Forest green" />
+            {category === "T-Shirts" && (
+              <div className="option-row" role="group" aria-label="Quick pick tee colours">
+                {TEE_COLOR_LIST.map((c) => {
+                  const on = colors.some((x) => x.toLowerCase() === c.name.toLowerCase());
+                  return (
+                    <button
+                      key={c.key}
+                      type="button"
+                      className={`chip${on ? " active" : ""}`}
+                      aria-pressed={on}
+                      onClick={() => setColorsText((on ? colors.filter((x) => x.toLowerCase() !== c.name.toLowerCase()) : [...colors, c.name]).join(", "))}
+                    >
+                      {c.name}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </label>
         </div>
 

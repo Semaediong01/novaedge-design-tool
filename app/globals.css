@@ -511,3 +511,32 @@ textarea.field { resize: vertical; }
   .hero-stage, .value-strip { display: none; }
   .hero-grid { padding-bottom: 2rem; }
 }
+
+/* ---------- Designer: tool drawer, colour dots, fonts, graphics ---------- */
+.workspace-grid { grid-template-columns: 96px minmax(0, 280px) minmax(0, 1fr); gap: 1.5rem; }
+@media (max-width: 1000px) { .workspace-grid { grid-template-columns: 96px minmax(0, 1fr); } .tool-drawer { grid-column: 1 / -1; order: 3; } .workspace-canvas { grid-column: 2; } }
+@media (max-width: 860px) {
+  .workspace-grid { grid-template-columns: minmax(0, 1fr); }
+  .workspace-canvas { grid-column: auto; }
+  .tool-drawer { grid-column: auto; order: 3; }
+}
+.tool-btn-on { background: var(--mint); border-color: var(--green); color: var(--accent); }
+.tool-drawer { display: flex; flex-direction: column; gap: 0.85rem; padding: 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; max-height: 640px; overflow-y: auto; }
+.drawer-title { font-size: 1.1rem; }
+.drawer-sub { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.drawer-note { font-size: 0.85rem; color: var(--muted); line-height: 1.45; }
+.drawer-stack { display: flex; flex-direction: column; gap: 0.5rem; align-items: stretch; }
+.thumb-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 0.5rem; }
+.thumb-btn { width: 100%; aspect-ratio: 1; padding: 0.5rem; border-radius: 12px; border: 1.5px solid var(--line); background: var(--soft); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.thumb-btn:hover, .thumb-btn.active { border-color: var(--green); background: var(--mint); }
+.thumb-btn img, .thumb-btn svg { width: 100%; height: 100%; object-fit: contain; display: block; }
+.font-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.35rem; }
+.font-btn { width: 100%; text-align: left; padding: 0.5rem 0.75rem; border-radius: 10px; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); font-size: 1.05rem; cursor: pointer; }
+.font-btn:hover { border-color: var(--green); }
+.font-btn.active { background: var(--green); border-color: var(--green); color: var(--white); }
+.swatch-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.color-dot { width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--line); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.35); cursor: pointer; padding: 0; }
+.color-dot:hover { transform: scale(1.08); }
+.color-dot.active { outline: 2.5px solid var(--green); outline-offset: 2px; }
+.swatch-name { font-size: 0.85rem; color: var(--muted); margin-left: 0.25rem; }
+input[type="range"] { accent-color: var(--green); }

@@ -32,6 +32,12 @@ COLORS = {
     "white": ((247, 247, 245), 0.00, "plain", "green"),
     "ash":   ((171, 174, 172), 0.10, "heather", "black"),
     "black": ((24, 25, 24),    0.55, "plain", "white"),
+    "navy":  ((28, 42, 76),    0.40, "plain", "white"),
+    "royal": ((38, 84, 170),   0.30, "plain", "white"),
+    "forest": ((34, 77, 52),   0.40, "plain", "white"),
+    "red":   ((190, 38, 45),   0.25, "plain", "white"),
+    "maroon": ((100, 26, 38),  0.40, "plain", "white"),
+    "sand":  ((214, 196, 164), 0.05, "plain", "black"),
 }
 
 # Symbol: wearer's left chest = viewer's right. Logical units, top-left + width.

@@ -1,6 +1,7 @@
 // TemplateEditor.tsx — the customer designer, in template mode, for admins
 "use client";
 
+import { TEE_COLOR_NAMES } from "@/lib/mockups";
 import { CartProvider } from "@/components/CartProvider";
 import DesignCanvas, { type TemplateDraft } from "@/app/(store)/design/DesignCanvas";
 
@@ -10,7 +11,7 @@ type Props = {
   save: TemplateDraft["save"];
 };
 
-const TEE_COLORS = ["White", "Ash", "Black"];
+const TEE_COLORS = TEE_COLOR_NAMES;
 
 export default function TemplateEditor({ userId, draft, save }: Props) {
   // The designer reads the cart hook even in template mode, so give it an (unused) cart.
