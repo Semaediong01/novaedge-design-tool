@@ -418,3 +418,24 @@ create index if not exists audit_created_idx on public.audit_log (created_at des
 -- insert into public.admins (user_id, email)
 -- select id, email from auth.users where email = 'YOUR-ADMIN-EMAIL@example.com'
 -- on conflict (user_id) do nothing;
+
+-- ---------------------------------------------------------------- design library (artwork admins upload for the designer's Graphics tab)
+create table if not exists public.design_library (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  category text not null default 'General',
+  image_url text not null,
+  active boolean not null default true,
+  sort_order int not null default 0,
+  created_at timestamptz not null default now()
+);
+alter table public.design_library enable row level security;
+drop policy if exists "design_library public read" on public.design_library;
+create policy "design_library public read" on public.design_library for select using (active or public.is_admin());
+drop policy if exists "design_library admin write" on public.design_library;
+create policy "design_library admin write" on public.design_library for all to authenticated
+  using (public.is_admin()) with check (public.is_admin());
+
+-- ---------------------------------------------------------------- products made from a design on a standby mockup
+-- preset = { elements, art: {front, back}, previews: { <colour key>: {front, back} } }
+alter table public.products add column if not exists preset jsonb;

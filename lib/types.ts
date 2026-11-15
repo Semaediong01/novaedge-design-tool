@@ -32,6 +32,15 @@ export type Product = {
   sold_out_variants: string[];
   symbol_default: boolean;
   allow_uploads: boolean;
+  /** Set for products made in Admin -> Create product: a design placed on a standby mockup. */
+  preset?: ProductPreset | null;
+};
+
+/** `previews` are keyed by colour key (white, black, ...). `art` is the transparent print artwork per side. */
+export type ProductPreset = {
+  elements: unknown[];
+  art: { front: string | null; back: string | null };
+  previews: Record<string, { front?: string; back?: string }>;
 };
 
 export type Section = {

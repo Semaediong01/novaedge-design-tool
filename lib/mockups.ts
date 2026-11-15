@@ -80,7 +80,13 @@ export function symbolSrc(tone: SymbolTone, color: TeeColor): string {
 }
 
 /** The picture to show for a product in the shop, product page and cart. */
-export function productImage(product: Pick<Product, "category" | "images">, colorName?: string | null, withSymbol = true): string | null {
+export function productImage(product: Pick<Product, "category" | "images" | "preset">, colorName?: string | null, withSymbol = true): string | null {
+  const key0 = teeColorKey(colorName);
+  const previews = product.preset?.previews;
+  if (previews) {
+    const own = (key0 && previews[key0]) || Object.values(previews)[0];
+    if (own?.front) return own.front;
+  }
   const first = product.images[0];
   if (first && !first.startsWith("/mockups/")) return first;
   if (!usesTeeMockup(product)) return null;

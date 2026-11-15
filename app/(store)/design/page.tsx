@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { usesTeeMockup } from "@/lib/mockups";
 import { effectivePrice } from "@/lib/pricing";
 import { getBackPrintPrice, getTemplates } from "@/lib/store-data";
+import { getLibrary } from "@/lib/library";
 import DesignCanvas from "./DesignCanvas";
 
 export const metadata = { title: "Designer · Nova Edge" };
@@ -85,8 +86,10 @@ export default async function DesignPage({
         allowUploads: product.allow_uploads,
         soldOutVariants: product.sold_out_variants,
         backPrice: mockup ? await getBackPrintPrice() : 0,
+        presetElements: product.preset?.elements,
       }}
       templates={templates}
+      library={await getLibrary()}
       initialTemplateId={!initialDesign && templateId ? templateId : null}
       initialDesign={initialDesign}
       initialSize={size && product.sizes.includes(size) ? size : (product.sizes[0] ?? "")}
