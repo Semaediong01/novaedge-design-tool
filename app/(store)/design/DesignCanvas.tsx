@@ -4,6 +4,7 @@
 
 import Link from "next/link";
 import { useState, useRef, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { Stage, Layer, Group, Image as KonvaImage, Text, Rect, Circle, Shape, Transformer } from "react-konva";
 import useImage from "use-image";
 import { Type, Square, Circle as CircleIcon, ImagePlus, Trash2, Loader2, Check, Download, ShoppingCart, RotateCcw, LayoutTemplate, Sparkles, Frame as FrameIcon, Shapes } from "lucide-react";
@@ -16,6 +17,8 @@ import {
   symbolSrc, teeColorHex, teeColorKey, teeLayers,
   type SymbolTone, type TeeColor,
 } from "@/lib/mockups";
+import type { LibraryItem } from "@/lib/library";
+import { TEE_COLOR_LIST } from "@/lib/mockups";
 import { DESIGN_FONTS, DEFAULT_FONT, cssFamily, fontOf, loadFonts, warmFonts } from "@/lib/fonts";
 import { STICKERS, stickerSrc } from "@/lib/stickers";
 import { FRAME_SHAPES, coverFit, frameClip, frameThumbPath, type FrameShape } from "@/lib/frames";
@@ -49,22 +52,49 @@ export type TemplateDraft = {
   save: (input: TemplateSaveInput) => Promise<TemplateSaveResult>;
 };
 
+/** Admin "Create product": a design placed on the standby mockup becomes a product. */
+export type ProductSaveInput = {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  colors: string[];
+  customizable: boolean;
+  elements: unknown[];
+  art: { front: string | null; back: string | null };
+  previews: Record<string, { front?: string; back?: string }>;
+};
+export type ProductDraft = {
+  id: string | null;
+  title: string;
+  description: string;
+  price: number;
+  colors: string[];
+  customizable: boolean;
+  elements: unknown[];
+  save: (input: ProductSaveInput) => Promise<{ ok: true; id: string } | { ok: false; error: string }>;
+};
+
 type Props = {
   userId: string;
   /** mockup = a plain tee drawn from the built-in realistic mockups; otherwise `image` is the admin's photo. `price` is what the customer pays (promo included). */
   product: {
     id: string; title: string; image: string | null; mockup: boolean; price: number; sizes: string[]; colors: string[];
-    symbolDefault?: boolean; allowUploads?: boolean; soldOutVariants?: string[]; backPrice?: number;
+    symbolDefault?: boolean; allowUploads?: boolean; soldOutVariants?: string[]; backPrice?: number; presetElements?: unknown[];
   };
   initialDesign: { id: string; elements: DesignElement[]; printUrl: string | null; hasBack?: boolean } | null;
   initialSize: string;
   initialColor: string;
-  mode?: "design" | "template";
+  mode?: "design" | "template" | "product";
   /** Active templates for this product's category (customer mode). */
   templates?: TemplateOption[];
   initialTemplateId?: string | null;
   /** Required when mode is "template". */
   templateDraft?: TemplateDraft;
+  /** Required when mode is "product". */
+  productDraft?: ProductDraft;
+  /** Artwork the store owner uploaded in Admin -> Design library. */
+  library?: LibraryItem[];
 };
 
 const ELEMENT_TYPES = new Set(["text", "image", "rect", "circle", "symbol", "sticker", "frame"]);
@@ -212,11 +242,14 @@ function UploadedImage({ el, onSelect, onChange, clamp }: any) {
   );
 }
 
-export default function DesignCanvas({ userId, product, initialDesign, initialSize, initialColor, mode = "design", templates = [], initialTemplateId = null, templateDraft }: Props) {
+export default function DesignCanvas({ userId, product, initialDesign, initialSize, initialColor, mode = "design", templates = [], initialTemplateId = null, templateDraft, productDraft, library = [] }: Props) {
   const { upsertDesignLine } = useCart();
+  const router = useRouter();
   const isTemplateMode = mode === "template" && Boolean(templateDraft);
+  const isProductMode = mode === "product" && Boolean(productDraft);
+  const isAdminMode = isTemplateMode || isProductMode;
   const symbolAllowed = product.symbolDefault !== false;
-  const uploadsAllowed = isTemplateMode || product.allowUploads !== false;
+  const uploadsAllowed = isAdminMode || product.allowUploads !== false;
 
   const isTee = product.mockup;
   const area: Area = isTee ? TEE_PRINT_AREA : PHOTO_PRINT_AREA;
@@ -233,12 +266,21 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
 
   const [elements, setElements] = useState<DesignElement[]>(() => {
     if (isTemplateMode && templateDraft) return (templateDraft.elements as DesignElement[]) ?? [];
+    if (isProductMode && productDraft) return (productDraft.elements as DesignElement[]) ?? [];
     if (initialDesign) return initialDesign.elements;
     const tpl = initialTemplateId ? templates.find((t) => t.id === initialTemplateId) : null;
     if (tpl) return fromTemplate(tpl.elements);
+    // A product made from a design opens with that design; the brand symbol sits underneath when this product has one.
+    if (product.presetElements) return [...(isTee && symbolAllowed ? [newSymbol()] : []), ...fromTemplate(product.presetElements)];
     return isTee && symbolAllowed ? [newSymbol()] : [];
   });
   const [tplTitle, setTplTitle] = useState(templateDraft?.title ?? "");
+  const [pTitle, setPTitle] = useState(productDraft?.title ?? "");
+  const [pDesc, setPDesc] = useState(productDraft?.description ?? "");
+  const [pPrice, setPPrice] = useState(productDraft?.price ? String(productDraft.price) : "");
+  const [pColors, setPColors] = useState<string[]>(productDraft?.colors ?? ["White", "Black", "Ash"]);
+  const [pCustomizable, setPCustomizable] = useState(productDraft?.customizable ?? false);
+  const productId = productDraft?.id ?? null;
   const [tplCategory, setTplCategory] = useState(templateDraft?.category ?? "T-Shirts");
   const [templateId, setTemplateId] = useState<string | null>(templateDraft?.id ?? null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -374,9 +416,9 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
     setSaveStatus("Uploading image…");
     const supabase = createClient();
     // Customers write to their own folder in design-uploads; admins (template mode) write to product-images.
-    const bucket = isTemplateMode ? "product-images" : "design-uploads";
+    const bucket = isAdminMode ? "product-images" : "design-uploads";
     const ext = (file.name.split(".").pop() ?? "png").toLowerCase().replace(/[^a-z0-9]/g, "") || "png";
-    const path = isTemplateMode ? `templates/${crypto.randomUUID()}.${ext}` : `${userId}/${crypto.randomUUID()}.${ext}`;
+    const path = isAdminMode ? `${isProductMode ? "products" : "templates"}/${crypto.randomUUID()}.${ext}` : `${userId}/${crypto.randomUUID()}.${ext}`;
     const { error } = await supabase.storage.from(bucket).upload(path, file, { contentType: file.type });
     if (error) { setSaveStatus("Upload failed. Try again."); return null; }
     setSaveStatus("");
@@ -547,7 +589,7 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
     }
   };
 
-  const soldOut = !isTemplateMode && variantSoldOut(product.soldOutVariants, color, size);
+  const soldOut = !isAdminMode && variantSoldOut(product.soldOutVariants, color, size);
   const hasBackDesign = elements.some((el) => sideOf(el) === "back");
 
   const handleAddToCart = async () => {
@@ -592,6 +634,107 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
       setSaveStatus("Saved");
     } catch (e) {
       setSaveStatus(e instanceof Error && e.message ? e.message : "Couldn't save the template. Try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Library artwork: placed at its own proportions.
+  const placeLibrary = (item: LibraryItem) => {
+    const img = new window.Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      const w = 150;
+      const h = Math.min(220, Math.max(20, (w * img.naturalHeight) / Math.max(1, img.naturalWidth)));
+      addAndSelect({ id: newElementId(), type: "image", src: item.image_url, x: CENTER.x - w / 2, y: CENTER.y - h / 2, rotation: 0, width: w, height: h });
+    };
+    img.onerror = () => setSaveStatus("That design couldn't be loaded.");
+    img.src = item.image_url;
+  };
+
+  // Admin: turn the design on the mockup into a product. Makes print artwork and a preview for every colour sold.
+  const handleSaveProduct = async () => {
+    if (!productDraft) return;
+    setSaving(true);
+    setSaveStatus("Preparing the product…");
+    try {
+      const title = pTitle.trim();
+      const price = Number(pPrice);
+      if (!title) throw new Error("Give the product a name first.");
+      if (!Number.isFinite(price) || price <= 0) throw new Error("Enter the price.");
+      if (pColors.length === 0) throw new Error("Pick at least one colour to sell.");
+      const mine = elements.filter((el) => el.type !== "symbol");
+      if (mine.length === 0) throw new Error("Add a design to the tee first.");
+
+      await loadFonts(fontUses);
+      const supabase = createClient();
+      const pid = productId ?? crypto.randomUUID();
+      const stamp = Date.now();
+      const put = async (blob: Blob, name: string) => {
+        const path = `products/${pid}/${name}-${stamp}.png`;
+        const { error } = await supabase.storage.from("product-images").upload(path, blob, { contentType: "image/png" });
+        if (error) throw new Error("Upload failed. Try again.");
+        return supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;
+      };
+      const load = (src: string) =>
+        new Promise<HTMLImageElement>((resolve, reject) => {
+          const img = new window.Image();
+          img.crossOrigin = "anonymous";
+          img.onload = () => resolve(img);
+          img.onerror = () => reject(new Error("A mockup picture couldn't be loaded."));
+          img.src = src;
+        });
+
+      const sides: Side[] = ["front", ...(mine.some((el) => sideOf(el) === "back") ? (["back"] as Side[]) : [])];
+      const art: { front: string | null; back: string | null } = { front: null, back: null };
+      const shots: Partial<Record<Side, HTMLImageElement>> = {};
+      for (const sd of sides) {
+        setSaveStatus(`Making the ${sd} print artwork…`);
+        let shot: string | null = null;
+        for (const ratio of [8, 5, 3]) {
+          const candidate = snapshot({ ratio, crop: true, hideGarment: true, side: sd });
+          if (candidate && candidate.length > 2000) { shot = candidate; break; }
+        }
+        if (!shot) throw new Error("The canvas isn't ready yet.");
+        art[sd] = await put(await (await fetch(shot)).blob(), `${sd}-art`);
+        shots[sd] = await load(shot);
+      }
+
+      // A preview of the design on every colour, built from the same mockup layers the designer uses.
+      const previews: Record<string, { front?: string; back?: string }> = {};
+      const keys = [...new Set(pColors.map((c) => teeColorKey(c)).filter((k): k is TeeColor => Boolean(k)))];
+      let done = 0;
+      for (const key of keys) {
+        for (const sd of sides) {
+          setSaveStatus(`Making previews (${++done}/${keys.length * sides.length})…`);
+          const layers = teeLayers(key, sd);
+          const [bare, shade, light] = await Promise.all([load(layers.bare), load(layers.shade), load(layers.light)]);
+          const canvas = document.createElement("canvas");
+          canvas.width = 1000; canvas.height = 1000;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) throw new Error("Couldn't make the previews.");
+          const k = 1000 / LOGICAL_SIZE;
+          ctx.drawImage(bare, 0, 0, 1000, 1000);
+          const a = shots[sd];
+          if (a) ctx.drawImage(a, TEE_PRINT_AREA.x * k, TEE_PRINT_AREA.y * k, TEE_PRINT_AREA.width * k, TEE_PRINT_AREA.height * k);
+          ctx.drawImage(shade, 0, 0, 1000, 1000);
+          if (layers.lightOpacity > 0) { ctx.globalAlpha = layers.lightOpacity; ctx.drawImage(light, 0, 0, 1000, 1000); ctx.globalAlpha = 1; }
+          const blob: Blob | null = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+          if (!blob) throw new Error("Couldn't make the previews.");
+          previews[key] = { ...previews[key], [sd]: await put(blob, `${key}-${sd}`) };
+        }
+      }
+
+      setSaveStatus("Saving the product…");
+      const result = await productDraft.save({ id: pid, title, description: pDesc.trim(), price, colors: pColors, customizable: pCustomizable, elements: mine, art, previews });
+      if (!result.ok) throw new Error(result.error);
+      if (!productId) {
+        router.push(`/admin/products/${result.id}?saved=1`); // set promo, affiliate rate and stock there
+        return;
+      }
+      setSaveStatus("Saved");
+    } catch (e) {
+      setSaveStatus(e instanceof Error && e.message ? e.message : "Couldn't save the product. Try again.");
     } finally {
       setSaving(false);
     }
@@ -701,7 +844,7 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
 
   return (
     <div className="workspace">
-      <h1 className="workspace-title">{isTemplateMode ? (templateId ? "Edit template" : "New template") : product.title}</h1>
+      <h1 className="workspace-title">{isTemplateMode ? (templateId ? "Edit template" : "New template") : isProductMode ? (productId ? "Edit design product" : "Create product from a design") : product.title}</h1>
 
       {isTemplateMode && templateDraft && (
         <div className="template-meta">
@@ -720,10 +863,46 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
         </div>
       )}
 
+      {isProductMode && productDraft && (
+        <div className="template-meta product-meta">
+          <label className="field-group grow">
+            <span className="panel-label">Product name</span>
+            <input type="text" className="field" value={pTitle} maxLength={80} onChange={(e) => setPTitle(e.target.value)} placeholder="e.g. Sunday Service Tee" />
+          </label>
+          <label className="field-group">
+            <span className="panel-label">Price (₦)</span>
+            <input type="number" className="field" style={{ width: "130px" }} min={0} step={100} value={pPrice} onChange={(e) => setPPrice(e.target.value)} />
+          </label>
+          <label className="field-group grow">
+            <span className="panel-label">Description (optional)</span>
+            <input type="text" className="field" value={pDesc} maxLength={300} onChange={(e) => setPDesc(e.target.value)} />
+          </label>
+          <div className="field-group">
+            <span className="panel-label">Colours to sell</span>
+            <div className="option-row" role="group" aria-label="Colours to sell">
+              {TEE_COLOR_LIST.map((c) => {
+                const on = pColors.includes(c.name);
+                return (
+                  <button key={c.key} type="button" className={`color-dot${on ? " active" : ""}`} style={{ background: c.hex }} title={c.name} aria-label={`${c.name}${on ? ", selected" : ""}`} aria-pressed={on}
+                    onClick={() => setPColors((cur) => (on ? cur.filter((x) => x !== c.name) : [...cur, c.name]))} />
+                );
+              })}
+            </div>
+          </div>
+          <label className="field-group">
+            <span className="panel-label">Customers</span>
+            <span className="option-row">
+              <input type="checkbox" checked={pCustomizable} onChange={(e) => setPCustomizable(e.target.checked)} />
+              <span>Can change this design</span>
+            </span>
+          </label>
+        </div>
+      )}
+
       <div className="design-options">
-        {!isTemplateMode && <span className="design-price">{naira(product.price)} · customizing is included</span>}
-        {isTemplateMode && <span className="design-price">Tee colour</span>}
-        {!isTemplateMode && product.sizes.length > 0 && (
+        {!isAdminMode && <span className="design-price">{naira(product.price)} · customizing is included</span>}
+        {isAdminMode && <span className="design-price">Preview colour</span>}
+        {!isAdminMode && product.sizes.length > 0 && (
           <div className="option-row" role="group" aria-label="Size">
             {product.sizes.map((s) => (
               <button key={s} type="button" className={`chip${s === size ? " active" : ""}`} aria-pressed={s === size} onClick={() => setSize(s)}>
@@ -758,7 +937,7 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
             ["frames", "Frames", FrameIcon],
             ...(uploadsAllowed ? [["upload", "Upload", ImagePlus]] : []),
             ["shapes", "Shapes", Shapes],
-            ...(!isTemplateMode && templates.length > 0 ? [["templates", "Templates", LayoutTemplate]] : []),
+            ...(!isAdminMode && templates.length > 0 ? [["templates", "Templates", LayoutTemplate]] : []),
           ] as [Tab, string, typeof Type][]).map(([key, label, Icon]) => (
             <button key={key} type="button" className={`tool-btn${tab === key ? " tool-btn-on" : ""}`} aria-pressed={tab === key} onClick={() => setTab(key)}>
               <Icon size={18} /> {label}
@@ -772,11 +951,11 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
 
           <div className="rail-divider" />
 
-          <button className="tool-btn tool-btn-primary" onClick={isTemplateMode ? handleSaveTemplate : handleSave} disabled={saving}>
+          <button className="tool-btn tool-btn-primary" onClick={isTemplateMode ? handleSaveTemplate : isProductMode ? handleSaveProduct : handleSave} disabled={saving}>
             {saving ? <Loader2 size={18} className="spin" /> : <Check size={18} />}
-            {isTemplateMode ? "Save template" : "Save"}
+            {isTemplateMode ? "Save template" : isProductMode ? "Save product" : "Save"}
           </button>
-          {!isTemplateMode && (
+          {!isAdminMode && (
             <button className="tool-btn tool-btn-primary" onClick={handleAddToCart} disabled={saving || soldOut || (!isTee && elements.length === 0)}>
               <ShoppingCart size={18} />
               {added ? "Update cart" : "Add to cart"}
@@ -818,6 +997,22 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
             <>
               <h2 className="drawer-title">Graphics</h2>
               <p className="drawer-note">Small designs to add to your tee. Tap one to place it, then change its colour.</p>
+              {library.length > 0 && (
+                <>
+                  <h3 className="drawer-sub">Nova Edge designs</h3>
+                  <ul className="thumb-grid">
+                    {library.map((item) => (
+                      <li key={item.id}>
+                        <button type="button" className="thumb-btn thumb-art" title={item.title} aria-label={`Add ${item.title}`} onClick={() => placeLibrary(item)}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={item.image_url} alt="" loading="lazy" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                  <h3 className="drawer-sub">Shapes and icons</h3>
+                </>
+              )}
               <ul className="thumb-grid">
                 {STICKERS.map((st) => (
                   <li key={st.key}>
@@ -889,7 +1084,7 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
             </>
           )}
 
-          {tab === "templates" && !isTemplateMode && (
+          {tab === "templates" && !isAdminMode && (
             <>
               <h2 className="drawer-title">Templates</h2>
               <p className="drawer-note">Start from a ready-made design.</p>
@@ -1095,7 +1290,7 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
             <p className="empty-hint">Select something on the shirt to edit it. Drag the corners to resize.</p>
           )}
 
-          {!isTemplateMode && (printPreview || printUrl) && (
+          {!isAdminMode && (printPreview || printUrl) && (
             <div className="print-ready">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={(printPreview ?? printUrl) as string} alt="Print-ready design" />

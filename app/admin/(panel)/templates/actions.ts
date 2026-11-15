@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { logAction } from "@/lib/audit";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const ELEMENT_TYPES = new Set(["text", "image", "rect", "circle", "symbol"]);
+const ELEMENT_TYPES = new Set(["text", "image", "rect", "circle", "symbol", "sticker", "frame"]);
 const text = (v: FormDataEntryValue | null, max: number) => String(v ?? "").trim().slice(0, max);
 const enc = encodeURIComponent;
 

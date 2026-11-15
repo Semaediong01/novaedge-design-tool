@@ -55,7 +55,8 @@ export default async function AdminProducts({ searchParams }: { searchParams: Pr
           <p>{all.length} product{all.length === 1 ? "" : "s"}. Use the buttons on each row for quick changes, or open a product to edit everything.</p>
         </div>
         <div className="ad-actions">
-          <Link href="/admin/products/new" className="btn">Add product</Link>
+          <Link href="/admin/products/from-design" className="btn">Create from a design</Link>
+          <Link href="/admin/products/new" className="btn btn-ghost">Add product</Link>
         </div>
       </div>
 
@@ -129,6 +130,7 @@ export default async function AdminProducts({ searchParams }: { searchParams: Pr
                     <td>
                       <div className="pl-actions">
                         <Link href={`/admin/products/${p.id}`} className="text-link">Edit</Link>
+                        {p.preset && <Link href={`/admin/products/${p.id}/design`} className="text-link">Edit design</Link>}
                         <Quick id={p.id} field="active" value={!p.active} label={p.active ? "Hide" : "Show"} q={q} cat={cat} />
                         <Quick id={p.id} field="in_stock" value={!p.in_stock} label={p.in_stock ? "Mark sold out" : "Mark in stock"} q={q} cat={cat} />
                         <Quick id={p.id} field="featured" value={!p.featured} label={p.featured ? "Remove from home" : "Add to home"} q={q} cat={cat} />

@@ -56,3 +56,7 @@ The first photo of a customizable product is the garment in the designer. Use a 
 ## Front and back printing (upgrade)
 
 Run all of `supabase/schema.sql` again in the Supabase SQL Editor (safe to re-run). It adds the columns that store the back print files. Then set what a back print costs in Admin -> Print sizes -> Back print (0 = included).
+
+## Create product from a design, and the design library (upgrade)
+
+Run all of `supabase/schema.sql` again in the Supabase SQL Editor (safe to re-run). It adds the `design_library` table and the `preset` column that holds products made from a design. Then: Admin -> Design library to upload artwork for the designer, and Admin -> Products -> Create from a design to put a design on the standby tee and sell it.

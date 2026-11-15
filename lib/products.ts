@@ -23,6 +23,7 @@ export function normalizeProduct(row: Record<string, unknown>): Product {
     sold_out_variants: p.sold_out_variants ?? [],
     symbol_default: p.symbol_default ?? true,
     allow_uploads: p.allow_uploads ?? true,
+    preset: p.preset ?? null,
   };
 }
 

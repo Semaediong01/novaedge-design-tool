@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import { naira } from "@/lib/format";
-import { productImage, usesTeeMockup } from "@/lib/mockups";
+import { productImage, teeColorKey, usesTeeMockup } from "@/lib/mockups";
 import ProductActions from "@/components/ProductActions";
 import { effectivePrice, promoActive } from "@/lib/pricing";
 import type { Product } from "@/lib/types";
@@ -13,7 +13,14 @@ export default function ProductView({ product }: { product: Product }) {
   const tee = usesTeeMockup(product);
 
   // Generated tees: one view with the symbol, one without. Uploaded photos: the admin's own gallery.
-  const views = tee
+  const preset = product.preset?.previews;
+  const own = preset ? ((teeColorKey(color) && preset[teeColorKey(color) as string]) || Object.values(preset)[0]) : null;
+  const views = own
+    ? [
+        ...(own.front ? [{ src: own.front, label: `${product.title}, ${color}, front` }] : []),
+        ...(own.back ? [{ src: own.back, label: `${product.title}, ${color}, back` }] : []),
+      ]
+    : tee
     ? [
         { src: productImage(product, color, true), label: `${product.title}, ${color} with the Nova Edge symbol` },
         { src: productImage(product, color, false), label: `${product.title}, ${color} plain` },
@@ -52,8 +59,8 @@ export default function ProductView({ product }: { product: Product }) {
           {promoActive(product) && <s className="price-was">{naira(product.price)}</s>} {naira(effectivePrice(product))}
           {promoActive(product) && <span className="tag tag-promo tag-inline">{product.promo_label || "Sale"}</span>}
         </p>
-        {product.customizable && <p className="pdp-note">Customizing is included in the price.</p>}
-        {tee && <p className="muted">Comes with the small Nova Edge symbol on the chest. Open the designer to make it bigger, smaller, move it or remove it.</p>}
+        {product.customizable && <p className="pdp-note">{product.preset ? "You can change this design in the designer. Customizing is included in the price." : "Customizing is included in the price."}</p>}
+        {tee && !product.preset && <p className="muted">Comes with the small Nova Edge symbol on the chest. Open the designer to make it bigger, smaller, move it or remove it.</p>}
         {product.description && <p className="pdp-desc">{product.description}</p>}
         <ProductActions product={product} color={color} onColorChange={(c) => { setColor(c); setPicked(0); }} />
       </div>
