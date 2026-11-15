@@ -4,7 +4,7 @@
 
 import Link from "next/link";
 import { useState, useRef, useEffect, useMemo } from "react";
-import { Stage, Layer, Image as KonvaImage, Text, Rect, Circle, Shape, Transformer } from "react-konva";
+import { Stage, Layer, Group, Image as KonvaImage, Text, Rect, Circle, Shape, Transformer } from "react-konva";
 import useImage from "use-image";
 import { Type, Square, Circle as CircleIcon, ImagePlus, Trash2, Loader2, Check, Download, ShoppingCart, RotateCcw, LayoutTemplate, Sparkles, Frame as FrameIcon, Shapes } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -21,7 +21,8 @@ import { STICKERS, stickerSrc } from "@/lib/stickers";
 import { FRAME_SHAPES, coverFit, frameClip, frameThumbPath, type FrameShape } from "@/lib/frames";
 import "@/components/mockups/mockups.css";
 
-type ElementBase = { id: string; x: number; y: number; rotation: number };
+/** `side` is "back" for elements on the back of the tee; front elements have no side (so older designs stay valid). */
+type ElementBase = { id: string; x: number; y: number; rotation: number; side?: "back" };
 type TextEl = ElementBase & { type: "text"; text: string; fontSize: number; fill: string; fontFamily?: string; bold?: boolean };
 type ImageEl = ElementBase & { type: "image"; src: string; width: number; height: number };
 type ShapeEl = ElementBase & { type: "rect" | "circle"; width: number; height: number; fill: string };
@@ -53,9 +54,9 @@ type Props = {
   /** mockup = a plain tee drawn from the built-in realistic mockups; otherwise `image` is the admin's photo. `price` is what the customer pays (promo included). */
   product: {
     id: string; title: string; image: string | null; mockup: boolean; price: number; sizes: string[]; colors: string[];
-    symbolDefault?: boolean; allowUploads?: boolean; soldOutVariants?: string[];
+    symbolDefault?: boolean; allowUploads?: boolean; soldOutVariants?: string[]; backPrice?: number;
   };
-  initialDesign: { id: string; elements: DesignElement[]; printUrl: string | null } | null;
+  initialDesign: { id: string; elements: DesignElement[]; printUrl: string | null; hasBack?: boolean } | null;
   initialSize: string;
   initialColor: string;
   mode?: "design" | "template";
@@ -73,6 +74,8 @@ const LOGICAL_SIZE = 500;
 const PHOTO_PRINT_AREA = { x: 100, y: 85, width: 300, height: 365 };
 type Area = { x: number; y: number; width: number; height: number };
 const DEFAULT_FILL = "#1E3A1C";
+type Side = "front" | "back";
+const sideOf = (el: { side?: string }): Side => (el.side === "back" ? "back" : "front");
 
 function makeClamp(area: Area) {
   return function clampDrag(this: any, pos: { x: number; y: number }) {
@@ -251,6 +254,8 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
   const [added, setAdded] = useState(false);
   const [scale, setScale] = useState(1);
   const [tab, setTab] = useState<Tab>("text");
+  const [side, setSide] = useState<Side>("front");
+  const [savedBack, setSavedBack] = useState(Boolean(initialDesign?.hasBack));
   const [fontTick, setFontTick] = useState(0);
   const [uploads, setUploads] = useState<string[]>([]);
 
@@ -335,8 +340,9 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
 
   const CENTER = { x: area.x + area.width / 2, y: area.y + area.height / 2 };
   const addAndSelect = (el: DesignElement) => {
-    setElements((els) => [...els, el]);
-    selectEl(el);
+    const placed = side === "back" ? ({ ...el, side: "back" } as DesignElement) : el;
+    setElements((els) => [...els, placed]);
+    selectEl(placed);
   };
 
   const addText = (preset: { text: string; fontSize: number; fontFamily: string; bold?: boolean } = { text: "New Text", fontSize: 28, fontFamily: DEFAULT_FONT, bold: true }) =>
@@ -406,12 +412,17 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
 
   // Hides the guide and selection (and optionally the garment), snaps a PNG, then restores the UI.
   // `ratio` is output pixels per logical unit; `crop` limits the shot to the print area.
-  const snapshot = (opts: { ratio: number; crop: boolean; hideGarment: boolean }): string | null => {
+  const snapshot = (opts: { ratio: number; crop: boolean; hideGarment: boolean; side?: Side }): string | null => {
     const stage = stageRef.current;
     const guide = guideRectRef.current;
     if (!stage || !guide) return null;
 
     const garments: any[] = [...(opts.hideGarment ? stage.find(".garment") : []), ...stage.find(".placeholder")];
+    // Only the chosen side of the tee goes into the picture (front by default).
+    const target = opts.side ?? "front";
+    const sideGroups: any[] = stage.find(".side-front, .side-back");
+    const wasVisible = sideGroups.map((g) => g.visible());
+    sideGroups.forEach((g) => g.visible(g.hasName(`side-${target}`)));
     guide.visible(false);
     garments.forEach((n) => n.visible(false));
     transformerRef.current?.nodes([]);
@@ -423,6 +434,7 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
         pixelRatio: scale > 0 ? opts.ratio / scale : opts.ratio,
       });
     } finally {
+      sideGroups.forEach((g, i) => g.visible(wasVisible[i]));
       guide.visible(true);
       garments.forEach((n) => n.visible(true));
       guide.getLayer().batchDraw();
@@ -431,7 +443,7 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
   };
 
   const capturePrintReady = (): string | null => {
-    const dataUrl = snapshot({ ratio: 2, crop: true, hideGarment: false });
+    const dataUrl = snapshot({ ratio: 2, crop: true, hideGarment: false, side: "front" });
     if (dataUrl) setPrintPreview(dataUrl);
     return dataUrl;
   };
@@ -439,11 +451,11 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
   // Garment-free, transparent artwork. Printers want about 150+ dpi, so we export as sharp as the device allows
   // (12 pixels per design unit = 2640 x 3600 px) and step down on phones that can't make a canvas that large.
   // Never blocks saving: any failure just means no production file.
-  const exportProduction = async (designIdValue: string): Promise<string | null> => {
+  const exportProduction = async (designIdValue: string, which: Side = "front"): Promise<string | null> => {
     try {
       let dataUrl: string | null = null;
       for (const ratio of [12, 8, 5, 3]) {
-        const shot = snapshot({ ratio, crop: true, hideGarment: true });
+        const shot = snapshot({ ratio, crop: true, hideGarment: true, side: which });
         if (shot && shot.length > 2000) {
           dataUrl = shot;
           break;
@@ -452,18 +464,19 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
       if (!dataUrl) return null;
       const blob = await (await fetch(dataUrl)).blob();
       const supabase = createClient();
-      const stable = `${userId}/${designIdValue}-production.png`;
+      const tag = which === "back" ? "-back" : "";
+      const stable = `${userId}/${designIdValue}${tag}-production.png`;
       let usedPath = stable;
       let { error } = await supabase.storage.from("print-files").upload(stable, blob, { contentType: "image/png", upsert: true });
       if (error) {
         // Overwriting needs an update policy; without it, fall back to a fresh file name.
-        usedPath = `${userId}/${designIdValue}-production-${Date.now()}.png`;
+        usedPath = `${userId}/${designIdValue}${tag}-production-${Date.now()}.png`;
         ({ error } = await supabase.storage.from("print-files").upload(usedPath, blob, { contentType: "image/png" }));
       }
       if (error) return null;
       const base = supabase.storage.from("print-files").getPublicUrl(usedPath).data.publicUrl;
       const url = usedPath === stable ? `${base}?v=${Date.now()}` : base;
-      const { error: updateError } = await supabase.from("designs").update({ production_url: url }).eq("id", designIdValue);
+      const { error: updateError } = await supabase.from("designs").update(which === "back" ? { back_production_url: url } : { production_url: url }).eq("id", designIdValue);
       return updateError ? null : url;
     } catch {
       return null;
@@ -503,12 +516,31 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
 
       await exportProduction(id);
 
+      // The back of the tee has its own files. They are removed again if the back design is emptied.
+      const hasBack = elements.some((el) => sideOf(el) === "back");
+      if (hasBack) {
+        const backShot = snapshot({ ratio: 2, crop: true, hideGarment: true, side: "back" });
+        if (!backShot) throw new Error("back");
+        const backBlob = await (await fetch(backShot)).blob();
+        const backPath = `${userId}/${id}-back-${Date.now()}.png`;
+        const { error: backUpload } = await supabase.storage.from("print-files").upload(backPath, backBlob, { contentType: "image/png" });
+        if (backUpload) throw backUpload;
+        const backUrl = supabase.storage.from("print-files").getPublicUrl(backPath).data.publicUrl;
+        const { error: backError } = await supabase.from("designs").update({ back_print_url: backUrl }).eq("id", id);
+        if (backError) throw new Error("back");
+        const backProduction = await exportProduction(id, "back");
+        if (!backProduction) throw new Error("back");
+      } else if (savedBack) {
+        await supabase.from("designs").update({ back_print_url: null, back_production_url: null }).eq("id", id);
+      }
+      setSavedBack(hasBack);
+
       setDesignId(id);
       setPrintUrl(url);
       setSaveStatus("Saved");
       return { id, printUrl: url };
-    } catch {
-      setSaveStatus("Couldn't save. Check your connection and try again.");
+    } catch (e) {
+      setSaveStatus(e instanceof Error && e.message === "back" ? "Couldn't save the back of your design yet. Please try again shortly." : "Couldn't save. Check your connection and try again.");
       return null;
     } finally {
       setSaving(false);
@@ -516,6 +548,7 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
   };
 
   const soldOut = !isTemplateMode && variantSoldOut(product.soldOutVariants, color, size);
+  const hasBackDesign = elements.some((el) => sideOf(el) === "back");
 
   const handleAddToCart = async () => {
     if (soldOut) return setCartStatus(`${color} in ${size} is sold out. Pick another size or colour.`);
@@ -525,7 +558,7 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
       productId: product.id,
       title: product.title,
       image: isTee ? `/mockups/tee-${colorKey}${hasSymbol ? "-symbol" : ""}.png` : product.image,
-      price: product.price, // already the effective (promo-aware) price from the page
+      price: product.price + (hasBackDesign ? (product.backPrice ?? 0) : 0), // promo-aware price from the page, plus the back print if used
       size,
       color,
       quantity: 1,
@@ -565,9 +598,13 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
   };
 
   const pickTemplate = (tpl: TemplateOption) => {
-    const hasOwnWork = elements.some((el) => el.type !== "symbol");
-    if (hasOwnWork && !window.confirm("Replace what's on the shirt with this template? Your current design will be lost.")) return;
-    setElements(fromTemplate(tpl.elements));
+    const hasOwnWork = elements.some((el) => el.type !== "symbol" && sideOf(el) === side);
+    if (hasOwnWork && !window.confirm(`Replace what's on the ${side} of the shirt with this template? Your current design there will be lost.`)) return;
+    const others = elements.filter((el) => sideOf(el) !== side);
+    const fresh = fromTemplate(tpl.elements)
+      .filter((el) => side === "front" || el.type !== "symbol")
+      .map((el) => (side === "back" ? ({ ...el, side: "back" } as DesignElement) : el));
+    setElements(side === "front" ? [...fresh, ...others] : [...others, ...fresh]);
     setSelectedId(null);
   };
 
@@ -593,6 +630,74 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
   const selectedEl = elements.find((el) => el.id === selectedId && el.type !== "symbol" && el.type !== "image") as TextEl | ShapeEl | StickerEl | FrameEl | undefined;
   const selectedText = selectedEl?.type === "text" ? selectedEl : undefined;
   const selectedFrame = selectedEl?.type === "frame" ? selectedEl : undefined;
+
+  const renderEl = (el: DesignElement) => {
+        const commonProps = {
+          draggable: true,
+          dragBoundFunc: clampDrag,
+          onClick: () => selectEl(el),
+          onTap: () => selectEl(el),
+          onDragEnd: (e: any) => updateElement({ ...el, x: e.target.x(), y: e.target.y() }),
+          name: el.id,
+        };
+
+        if (el.type === "text") {
+          return (
+            <Text
+              {...commonProps}
+              key={`${el.id}-${fontTick}`}
+              text={el.text} x={el.x} y={el.y} fontSize={el.fontSize} fill={el.fill} rotation={el.rotation}
+              fontFamily={cssFamily(el.fontFamily)} fontStyle={el.bold ? "bold" : "normal"}
+              onTransformEnd={(e: any) => {
+                const node = e.target;
+                updateElement({ ...el, x: node.x(), y: node.y(), rotation: node.rotation(), fontSize: Math.round(el.fontSize * node.scaleX()) });
+                node.scaleX(1); node.scaleY(1);
+              }}
+            />
+          );
+        }
+        if (el.type === "symbol") {
+          return <SymbolNode key={el.id} el={el} color={colorKey} clamp={clampDrag} onSelect={() => selectEl(el)} onChange={updateElement as (e: SymbolEl) => void} />;
+        }
+        if (el.type === "sticker") {
+          return <StickerNode key={el.id} el={el} clamp={clampDrag} onSelect={() => selectEl(el)} onChange={updateElement as (e: StickerEl) => void} />;
+        }
+        if (el.type === "frame") {
+          return <FrameNode key={el.id} el={el} clamp={clampDrag} onSelect={() => selectEl(el)} onChange={updateElement as (e: FrameEl) => void} />;
+        }
+        if (el.type === "image") {
+          return <UploadedImage key={el.id} el={el} clamp={clampDrag} onSelect={() => selectEl(el)} onChange={updateElement} />;
+        }
+        if (el.type === "rect") {
+          return (
+            <Rect
+              key={el.id}
+              {...commonProps}
+              x={el.x} y={el.y} width={el.width} height={el.height} fill={el.fill} rotation={el.rotation}
+              onTransformEnd={(e: any) => {
+                const node = e.target;
+                updateElement({ ...el, x: node.x(), y: node.y(), rotation: node.rotation(), width: node.width() * node.scaleX(), height: node.height() * node.scaleY() });
+                node.scaleX(1); node.scaleY(1);
+              }}
+            />
+          );
+        }
+        if (el.type === "circle") {
+          return (
+            <Circle
+              key={el.id}
+              {...commonProps}
+              x={el.x} y={el.y} radius={el.width / 2} fill={el.fill} rotation={el.rotation}
+              onTransformEnd={(e: any) => {
+                const node = e.target;
+                updateElement({ ...el, x: node.x(), y: node.y(), rotation: node.rotation(), width: el.width * node.scaleX() });
+                node.scaleX(1); node.scaleY(1);
+              }}
+            />
+          );
+        }
+        return null;
+  };
 
   return (
     <div className="workspace">
@@ -810,6 +915,17 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
         {/* Canvas + properties */}
         <div className="workspace-canvas">
           {soldOut && <p className="form-note" role="status">{color} in {size} is sold out. Pick another size or colour.</p>}
+          {isTee && !isTemplateMode && (
+            <div className="side-switch" role="group" aria-label="Which side of the tee">
+              {(["front", "back"] as Side[]).map((sd) => (
+                <button key={sd} type="button" className={`chip${side === sd ? " active" : ""}`} aria-pressed={side === sd} onClick={() => { setSide(sd); setSelectedId(null); }}>
+                  {sd === "front" ? "Front" : "Back"}
+                  {sd === "back" && (product.backPrice ?? 0) > 0 && <span className="chip-note"> +{naira(product.backPrice ?? 0)}</span>}
+                  {sd === "back" && elements.some((el) => sideOf(el) === "back") && <span className="chip-note"> · designed</span>}
+                </button>
+              ))}
+            </div>
+          )}
           <div className="canvas-frame">
             <div className="canvas-inner" ref={canvasWrapRef}>
               <Stage
@@ -822,79 +938,18 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
                 onMouseDown={(e) => { if (e.target === e.target.getStage()) setSelectedId(null); }}
               >
                 <Layer>
-                  {isTee ? <GarmentBackground url={teeLayers(colorKey).bare} /> : product.image ? <GarmentBackground url={product.image} /> : null}
-
-                  {elements.map((el) => {
-                    const commonProps = {
-                      draggable: true,
-                      dragBoundFunc: clampDrag,
-                      onClick: () => selectEl(el),
-                      onTap: () => selectEl(el),
-                      onDragEnd: (e: any) => updateElement({ ...el, x: e.target.x(), y: e.target.y() }),
-                      name: el.id,
-                    };
-
-                    if (el.type === "text") {
-                      return (
-                        <Text
-                          {...commonProps}
-                          key={`${el.id}-${fontTick}`}
-                          text={el.text} x={el.x} y={el.y} fontSize={el.fontSize} fill={el.fill} rotation={el.rotation}
-                          fontFamily={cssFamily(el.fontFamily)} fontStyle={el.bold ? "bold" : "normal"}
-                          onTransformEnd={(e: any) => {
-                            const node = e.target;
-                            updateElement({ ...el, x: node.x(), y: node.y(), rotation: node.rotation(), fontSize: Math.round(el.fontSize * node.scaleX()) });
-                            node.scaleX(1); node.scaleY(1);
-                          }}
-                        />
-                      );
-                    }
-                    if (el.type === "symbol") {
-                      return <SymbolNode key={el.id} el={el} color={colorKey} clamp={clampDrag} onSelect={() => selectEl(el)} onChange={updateElement as (e: SymbolEl) => void} />;
-                    }
-                    if (el.type === "sticker") {
-                      return <StickerNode key={el.id} el={el} clamp={clampDrag} onSelect={() => selectEl(el)} onChange={updateElement as (e: StickerEl) => void} />;
-                    }
-                    if (el.type === "frame") {
-                      return <FrameNode key={el.id} el={el} clamp={clampDrag} onSelect={() => selectEl(el)} onChange={updateElement as (e: FrameEl) => void} />;
-                    }
-                    if (el.type === "image") {
-                      return <UploadedImage key={el.id} el={el} clamp={clampDrag} onSelect={() => selectEl(el)} onChange={updateElement} />;
-                    }
-                    if (el.type === "rect") {
-                      return (
-                        <Rect
-                          key={el.id}
-                          {...commonProps}
-                          x={el.x} y={el.y} width={el.width} height={el.height} fill={el.fill} rotation={el.rotation}
-                          onTransformEnd={(e: any) => {
-                            const node = e.target;
-                            updateElement({ ...el, x: node.x(), y: node.y(), rotation: node.rotation(), width: node.width() * node.scaleX(), height: node.height() * node.scaleY() });
-                            node.scaleX(1); node.scaleY(1);
-                          }}
-                        />
-                      );
-                    }
-                    if (el.type === "circle") {
-                      return (
-                        <Circle
-                          key={el.id}
-                          {...commonProps}
-                          x={el.x} y={el.y} radius={el.width / 2} fill={el.fill} rotation={el.rotation}
-                          onTransformEnd={(e: any) => {
-                            const node = e.target;
-                            updateElement({ ...el, x: node.x(), y: node.y(), rotation: node.rotation(), width: el.width * node.scaleX() });
-                            node.scaleX(1); node.scaleY(1);
-                          }}
-                        />
-                      );
-                    }
-                    return null;
+                  {(isTee ? (["front", "back"] as Side[]) : (["front"] as Side[])).map((sd) => {
+                    const layers = teeLayers(colorKey, sd);
+                    return (
+                      <Group key={sd} name={`side-${sd}`} visible={side === sd}>
+                        {isTee ? <GarmentBackground url={layers.bare} /> : product.image ? <GarmentBackground url={product.image} /> : null}
+                        {elements.filter((el) => sideOf(el) === sd).map(renderEl)}
+                        {/* Folds and highlights sit above the artwork so the print follows the cloth. */}
+                        {isTee && <GarmentBackground url={layers.shade} />}
+                        {isTee && layers.lightOpacity > 0 && <GarmentBackground url={layers.light} opacity={layers.lightOpacity} />}
+                      </Group>
+                    );
                   })}
-
-                  {/* Folds and highlights sit above the artwork so the print follows the cloth. */}
-                  {isTee && <GarmentBackground url={teeLayers(colorKey).shade} />}
-                  {isTee && teeLayers(colorKey).lightOpacity > 0 && <GarmentBackground url={teeLayers(colorKey).light} opacity={teeLayers(colorKey).lightOpacity} />}
 
                   <Rect
                     ref={guideRectRef}
@@ -920,7 +975,7 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
             </div>
           </div>
 
-          {isTee && (
+          {isTee && side === "front" && (
             <div className="symbol-panel" ref={symbolPanelRef}>
               <div className="symbol-panel-head">
                 <strong>Nova Edge symbol</strong>

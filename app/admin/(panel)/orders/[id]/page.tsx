@@ -152,7 +152,7 @@ export default async function AdminOrderDetail({ params, searchParams }: { param
                       {i.image && <img src={i.image} alt="" className="ord-thumb" />}
                     </td>
                     <td>
-                      {i.title} {custom && <span className="ad-badge info">custom</span>}
+                      {i.title} {custom && <span className="ad-badge info">custom</span>} {(i.back_print_url || i.back_production_url) && <span className="ad-badge info">front + back</span>}
                       {(i.print_url || i.production_url) && (
                         <div className="ord-art">
                           {(i.production_url || i.print_url) && (
@@ -178,6 +178,24 @@ export default async function AdminOrderDetail({ params, searchParams }: { param
                               <figcaption>
                                 Transparent artwork<br />
                                 <Link href={`/admin/orders/${o.id}/artwork/${i.id}`} prefetch={false} className="text-link">Download print-ready artwork{spec ? ` (${i.size})` : ""}</Link>
+                              </figcaption>
+                            </figure>
+                          )}
+                        </div>
+                      )}
+                      {(i.back_print_url || i.back_production_url) && (
+                        <div className="ord-art">
+                          <figure className="ord-wide">
+                            <TeeFullPreview color={i.color} side="back" artUrl={(i.back_production_url ?? i.back_print_url) as string} alt={`${i.title} back with the customer's design placed on it`} />
+                            <figcaption>Back of the tee: where the design sits</figcaption>
+                          </figure>
+                          {i.back_production_url && (
+                            <figure>
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={i.back_production_url} alt={`Back artwork for ${i.title}`} className="ord-checker" />
+                              <figcaption>
+                                Back artwork (transparent)<br />
+                                <Link href={`/admin/orders/${o.id}/artwork/${i.id}?side=back`} prefetch={false} className="text-link">Download back artwork{spec ? ` (${i.size})` : ""}</Link>
                               </figcaption>
                             </figure>
                           )}

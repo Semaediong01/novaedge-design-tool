@@ -44,3 +44,18 @@ export async function resetPrintSizes() {
   revalidatePath("/admin/print-sizes");
   redirect("/admin/print-sizes?saved=1");
 }
+
+export async function saveBackPrice(formData: FormData) {
+  const user = await requireAdmin();
+  const supabase = await createClient();
+  const price = Number(formData.get("price"));
+  if (!Number.isFinite(price) || price < 0 || price > 1_000_000) redirect(`/admin/print-sizes?error=${encodeURIComponent("Enter a price of 0 or more.")}`);
+  const { error } = await supabase
+    .from("site_settings")
+    .upsert({ key: "back_print", value: { price: Math.round(price) }, updated_at: new Date().toISOString() });
+  if (error) redirect(`/admin/print-sizes?error=${encodeURIComponent("Couldn't save. Try again.")}`);
+  await logAction(user, "back_print.update", "site_settings", "back_print", { price: Math.round(price) });
+  revalidatePath("/admin/print-sizes");
+  revalidatePath("/design");
+  redirect("/admin/print-sizes?saved=1");
+}

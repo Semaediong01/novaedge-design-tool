@@ -52,3 +52,7 @@ Copy `.env.example` to `.env.local` locally, and add the same names in Vercel â†
 
 ## Product photos
 The first photo of a customizable product is the garment in the designer. Use a square, front-facing photo of the plain garment on a clean background. The print area is a fixed box on that square, so keep the garment centered the same way for every product.
+
+## Front and back printing (upgrade)
+
+Run all of `supabase/schema.sql` again in the Supabase SQL Editor (safe to re-run). It adds the columns that store the back print files. Then set what a back print costs in Admin -> Print sizes -> Back print (0 = included).

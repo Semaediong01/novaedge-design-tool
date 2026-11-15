@@ -1,11 +1,11 @@
 // app/admin/(panel)/print-sizes/page.tsx — how big the print is on each tee size
 import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { getPrintWidths } from "@/lib/store-data";
+import { getBackPrintPrice, getPrintWidths } from "@/lib/store-data";
 import { PRINT_RATIO, GOOD_DPI } from "@/lib/print-sizes";
 import { normalizeProduct } from "@/lib/products";
 import ConfirmButton from "../products/ConfirmButton";
-import { resetPrintSizes, savePrintSizes } from "./actions";
+import { resetPrintSizes, saveBackPrice, savePrintSizes } from "./actions";
 
 export const metadata = { title: "Print sizes · Admin · Nova Edge" };
 
@@ -13,6 +13,7 @@ export default async function AdminPrintSizes({ searchParams }: { searchParams: 
   await requireAdmin();
   const sp = await searchParams;
   const widths = await getPrintWidths();
+  const backPrice = await getBackPrintPrice();
 
   // Offer a row for every size your products use that has no setting yet.
   const supabase = await createClient();
@@ -61,6 +62,20 @@ export default async function AdminPrintSizes({ searchParams }: { searchParams: 
         </p>
         <div className="ad-actions">
           <button type="submit" className="btn">Save print sizes</button>
+        </div>
+      </form>
+
+      <form action={saveBackPrice} className="ad-form" style={{ marginTop: "2rem" }}>
+        <h2>Back print</h2>
+        <p className="ad-hint">
+          Customers can design the back of a tee as well as the front. This is what a back design adds to the price of that tee, in naira. Enter 0 to include the back for free.
+        </p>
+        <label className="field-group">
+          <span className="panel-label">Back print adds (₦)</span>
+          <input className="field" name="price" type="number" step="1" min="0" max="1000000" defaultValue={backPrice} style={{ maxWidth: "200px" }} />
+        </label>
+        <div className="ad-actions">
+          <button type="submit" className="btn">Save back print price</button>
         </div>
       </form>
 

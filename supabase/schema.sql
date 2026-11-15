@@ -366,6 +366,14 @@ alter table public.order_items
 -- The designer also saves a transparent, garment-free copy for the printer.
 alter table public.designs add column if not exists production_url text;
 
+-- Front and back printing: the back of the tee has its own print files.
+alter table public.designs
+  add column if not exists back_print_url text,
+  add column if not exists back_production_url text;
+alter table public.order_items
+  add column if not exists back_print_url text,
+  add column if not exists back_production_url text;
+
 -- ---------------------------------------------------------------- discount use counter (server only)
 -- Counts one use of a code. Returns false when the code is no longer usable (limit reached, switched off or expired),
 -- so a limited code can never be used more times than its limit.

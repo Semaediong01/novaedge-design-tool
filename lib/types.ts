@@ -54,6 +54,8 @@ export type OrderItem = {
   design_id: string | null;
   print_url: string | null;
   production_url: string | null;
+  back_print_url?: string | null;
+  back_production_url?: string | null;
   design_elements: unknown[] | null;
   discount_share: number;
   commission: number;

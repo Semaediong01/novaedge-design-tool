@@ -62,11 +62,14 @@ export function usesTeeMockup(product: Pick<Product, "category" | "images">): bo
   return !first || first.startsWith("/mockups/");
 }
 
-export function teeLayers(color: TeeColor) {
+export type TeeSide = "front" | "back";
+
+export function teeLayers(color: TeeColor, side: TeeSide = "front") {
+  const b = side === "back" ? "back-" : "";
   return {
-    bare: `/mockups/tee-bare-${color}.png`,
-    shade: "/mockups/tee-shade.png",
-    light: "/mockups/tee-light.png",
+    bare: `/mockups/tee-${b}bare-${color}.png`,
+    shade: `/mockups/tee-${b}shade.png`,
+    light: `/mockups/tee-${b}light.png`,
     lightOpacity: LIGHT_OPACITY[color],
   };
 }

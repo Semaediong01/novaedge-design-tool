@@ -102,11 +102,19 @@ BACK_CENTER = list(bez((210, 54), (232, 50), (268, 50), (290, 54)))
 FRONT_CENTER = list(bez((211, 62), (216, 104), (284, 104), (289, 62)))
 
 
+VIEW = "front"   # "back" renders the rear of the tee: a high, narrow neckline and no front collar
+BACK_LOW = list(bez((214, 61), (232, 72), (268, 72), (286, 61)))
+
+
 def build_masks():
     m_sil = draw_mask(polys=[SIL])
-    hole_poly = BACK_INNER + FRONT_INNER[::-1]
-    m_hole = draw_mask(polys=[hole_poly])
-    m_ring = np.clip(draw_mask(lines=[FRONT_CENTER], width=9) + draw_mask(lines=[BACK_CENTER], width=8), 0, 1) * m_sil
+    if VIEW == "back":
+        m_hole = draw_mask(polys=[BACK_INNER + BACK_LOW[::-1]])
+        m_ring = np.clip(draw_mask(lines=[BACK_CENTER], width=8) + draw_mask(lines=[BACK_LOW], width=7), 0, 1) * m_sil
+    else:
+        hole_poly = BACK_INNER + FRONT_INNER[::-1]
+        m_hole = draw_mask(polys=[hole_poly])
+        m_ring = np.clip(draw_mask(lines=[FRONT_CENTER], width=9) + draw_mask(lines=[BACK_CENTER], width=8), 0, 1) * m_sil
     m_ring = np.clip(m_ring - m_hole, 0, 1)
     left_sleeve = [(126, 86), (38, 178), (84, 220), (120, 188), (124, 120)]
     m_sleeve = draw_mask(polys=[left_sleeve, [(500 - x, y) for x, y in left_sleeve]]) * m_sil
@@ -233,7 +241,7 @@ def collar_detail(f):
     d += ribs - 0.045 * ring
     d *= 1 - 0.40 * f["hole"]
     d *= 1 - 0.20 * f["seam"]
-    for pts, off in ((FRONT_CENTER, 6.2), (BACK_CENTER, 5.4)):
+    for pts, off in (((BACK_CENTER, 5.4),) if VIEW == "back" else ((FRONT_CENTER, 6.2), (BACK_CENTER, 5.4))):
         st = stitch_line(pts, off, dash=5, gap=3.2, width=0.9)
         d *= 1 - 0.20 * st * f["sil"]
     hem = stitch_line(list(bez((113, 441), (190, 449), (310, 449), (387, 441))), 0, dash=6, gap=3, width=1.0)
@@ -290,6 +298,17 @@ def main():
             col = lit * f["sil"][..., None]
             col = col + (1 - f["sil"][..., None]) * 0.0
             save_png(np.dstack([col, a]), f"tee-{name}{variant}.png")
+    # Rear view: same silhouette and cloth, back neckline. Only the layers the designer stacks are needed.
+    global VIEW
+    VIEW = "back"
+    fb = render_fields()
+    save_png(np.dstack([np.zeros((N, N, 3), np.float32), fb["shade"]]), "tee-back-shade.png")
+    save_png(np.dstack([np.ones((N, N, 3), np.float32), fb["light"]]), "tee-back-light.png")
+    detail_b = collar_detail(fb)
+    for name, (rgb, light_strength, kind, tone) in COLORS.items():
+        tex = fabric_texture(kind, fb)
+        base = np.clip(np.array(rgb, np.float32)[None, None, :] / 255.0 * (1 + tex[..., None]) * detail_b[..., None], 0, 1)
+        save_png(np.dstack([base, fb["sil"]]), f"tee-back-bare-{name}.png")
     print("wrote mockups to", OUT)
 
 

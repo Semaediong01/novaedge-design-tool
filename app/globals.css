@@ -540,3 +540,4 @@ textarea.field { resize: vertical; }
 .color-dot.active { outline: 2.5px solid var(--green); outline-offset: 2px; }
 .swatch-name { font-size: 0.85rem; color: var(--muted); margin-left: 0.25rem; }
 input[type="range"] { accent-color: var(--green); }
+.side-switch { display: flex; gap: 0.5rem; margin-bottom: 0.85rem; }
