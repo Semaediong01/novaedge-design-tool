@@ -62,3 +62,11 @@ export async function getPrintWidths() {
   const { data } = await supabase.from("site_settings").select("value").eq("key", "print_sizes").maybeSingle();
   return cleanWidths((data?.value as { widths_cm?: unknown } | null)?.widths_cm);
 }
+
+/** What a back print adds to a tee's price (naira), set in Admin -> Print sizes. 0 means the back is included. */
+export async function getBackPrintPrice(): Promise<number> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("site_settings").select("value").eq("key", "back_print").maybeSingle();
+  const n = Number((data?.value as { price?: unknown } | null)?.price);
+  return Number.isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : 0;
+}

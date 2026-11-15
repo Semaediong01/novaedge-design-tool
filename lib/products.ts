@@ -1,4 +1,5 @@
 // lib/products.ts — product reads (RLS lets the public see active products only)
+import { TEE_COLOR_NAMES } from "@/lib/mockups";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/admin";
 import type { Product } from "@/lib/types";
@@ -40,7 +41,7 @@ function builtInTee(): Product {
     price: 15000,
     images: [],
     sizes: ["S", "M", "L", "XL", "XXL"],
-    colors: ["White", "Black", "Ash"],
+    colors: TEE_COLOR_NAMES,
     customizable: true,
     in_stock: true,
     active: true,
@@ -63,7 +64,7 @@ async function saveClassicTee() {
         price: 15000,
         images: [],
         sizes: ["S", "M", "L", "XL", "XXL"],
-        colors: ["White", "Black", "Ash"],
+        colors: TEE_COLOR_NAMES,
         customizable: true,
         in_stock: true,
         active: true,

@@ -16,6 +16,8 @@ export type PricedCartLine = PricedLine & {
   designId: string | null;
   printUrl: string | null;
   productionUrl: string | null;
+  backPrintUrl: string | null;
+  backProductionUrl: string | null;
   designElements: unknown[] | null;
   lineTotal: number;
   discountShare: number;
@@ -65,10 +67,18 @@ export async function priceCart(db: SupabaseClient, opts: Options): Promise<Cart
   const products = new Map((rows ?? []).map((r) => [r.id as string, normalizeProduct(r)]));
 
   const designIds = items.map((i) => i.designId).filter(Boolean) as string[];
-  const designs = new Map<string, { id: string; user_id: string; product_id: string; elements: unknown[]; print_url: string | null; production_url: string | null; locked: boolean }>();
+  const designs = new Map<string, { id: string; user_id: string; product_id: string; elements: unknown[]; print_url: string | null; production_url: string | null; back_print_url?: string | null; back_production_url?: string | null; locked: boolean }>();
   if (opts.user && designIds.length) {
     const { data } = await db.from("designs").select("*").in("id", designIds);
     for (const d of data ?? []) designs.set(d.id, d);
+  }
+
+  // A back print adds the price set in Admin -> Print sizes. It is read here, never taken from the browser.
+  let backPrice = 0;
+  if (designs.size > 0) {
+    const { data } = await db.from("site_settings").select("value").eq("key", "back_print").maybeSingle();
+    const n = Number((data?.value as { price?: unknown } | null)?.price);
+    backPrice = Number.isFinite(n) && n > 0 ? n : 0;
   }
 
   const now = new Date();
@@ -93,8 +103,12 @@ export async function priceCart(db: SupabaseClient, opts: Options): Promise<Cart
       }
     }
 
+    const hasBack = Boolean(design && Array.isArray(design.elements) && design.elements.some((e) => (e as { side?: string } | null)?.side === "back"));
+    if (design && hasBack && !design.back_print_url) {
+      return { ok: false, error: "The back of one of your designs wasn't saved. Open it in the designer and save it again." };
+    }
     const quantity = item.designId ? 1 : item.quantity;
-    const unitPrice = effectivePrice(product, now);
+    const unitPrice = money(effectivePrice(product, now) + (hasBack ? backPrice : 0));
     priced.push({
       productId: product.id,
       unitPrice,
@@ -108,6 +122,8 @@ export async function priceCart(db: SupabaseClient, opts: Options): Promise<Cart
       designId: design?.id ?? null,
       printUrl: design?.print_url ?? null,
       productionUrl: design?.production_url ?? null,
+      backPrintUrl: hasBack ? (design?.back_print_url ?? null) : null,
+      backProductionUrl: hasBack ? (design?.back_production_url ?? null) : null,
       designElements: design?.elements ?? null,
       lineTotal: lineTotal({ unitPrice, quantity }),
       discountShare: 0,

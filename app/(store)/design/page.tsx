@@ -6,7 +6,7 @@ import { getProduct } from "@/lib/products";
 import { createClient } from "@/lib/supabase/server";
 import { usesTeeMockup } from "@/lib/mockups";
 import { effectivePrice } from "@/lib/pricing";
-import { getTemplates } from "@/lib/store-data";
+import { getBackPrintPrice, getTemplates } from "@/lib/store-data";
 import DesignCanvas from "./DesignCanvas";
 
 export const metadata = { title: "Designer · Nova Edge" };
@@ -44,7 +44,7 @@ export default async function DesignPage({
     const supabase = await createClient();
     const { data: design } = await supabase
       .from("designs")
-      .select("id, elements, print_url, locked, product_id")
+      .select("*")
       .eq("id", designId)
       .eq("user_id", user.id)
       .maybeSingle();
@@ -59,7 +59,7 @@ export default async function DesignPage({
       );
     }
     if (design && design.product_id === product.id) {
-      initialDesign = { id: design.id as string, elements: design.elements as never[], printUrl: design.print_url as string | null };
+      initialDesign = { id: design.id as string, elements: design.elements as never[], printUrl: design.print_url as string | null, hasBack: Boolean(design.back_print_url) };
     }
   }
 
@@ -84,6 +84,7 @@ export default async function DesignPage({
         symbolDefault: product.symbol_default,
         allowUploads: product.allow_uploads,
         soldOutVariants: product.sold_out_variants,
+        backPrice: mockup ? await getBackPrintPrice() : 0,
       }}
       templates={templates}
       initialTemplateId={!initialDesign && templateId ? templateId : null}

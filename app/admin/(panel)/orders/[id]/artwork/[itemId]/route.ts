@@ -7,7 +7,7 @@ import { dpiFor, pngSize, printSizeFor, withPngDpi } from "@/lib/print-sizes";
 import { logAction } from "@/lib/audit";
 import { UUID_RE } from "../../../shared";
 
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string; itemId: string }> }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string; itemId: string }> }) {
   const user = await requireAdmin();
   const { id, itemId } = await params;
   if (!UUID_RE.test(id) || !UUID_RE.test(itemId)) return new Response("Not found", { status: 404 });
@@ -15,11 +15,12 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const supabase = await createClient();
   const { data: item } = await supabase
     .from("order_items")
-    .select("id, size, color, production_url, orders!inner(reference)")
+    .select("*, orders!inner(reference)")
     .eq("id", itemId)
     .eq("order_id", id)
     .maybeSingle();
-  const url = item?.production_url as string | null | undefined;
+  const back = new URL(req.url).searchParams.get("side") === "back";
+  const url = (back ? item?.back_production_url : item?.production_url) as string | null | undefined;
   const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
   if (!item || !url || !base || !url.startsWith(base)) return new Response("Not found", { status: 404 });
 
@@ -33,8 +34,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
   const reference = String((item.orders as unknown as { reference: string }).reference).replace(/[^A-Za-z0-9-]/g, "");
   const part = (v: unknown) => String(v ?? "").replace(/[^A-Za-z0-9]/g, "").slice(0, 12);
-  const name = `${reference}-${part(item.size)}-${part(item.color)}-print.png`;
-  await logAction(user, "order.artwork_download", "order", id, { item: itemId });
+  const name = `${reference}-${part(item.size)}-${part(item.color)}-${back ? "back-" : ""}print.png`;
+  await logAction(user, "order.artwork_download", "order", id, { item: itemId, side: back ? "back" : "front" });
 
   return new Response(new Blob([bytes as BlobPart], { type: "image/png" }), {
     headers: { "Content-Type": "image/png", "Content-Disposition": `attachment; filename="${name}"`, "Cache-Control": "no-store" },

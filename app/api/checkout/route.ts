@@ -78,6 +78,8 @@ export async function POST(req: Request) {
       design_id: l.designId,
       print_url: l.printUrl,
       production_url: l.productionUrl,
+      // Only written when there is a back print, so ordering still works before the database upgrade is run.
+      ...(l.backPrintUrl ? { back_print_url: l.backPrintUrl, back_production_url: l.backProductionUrl } : {}),
       design_elements: l.designElements,
       discount_share: l.discountShare,
       commission: l.commission,
