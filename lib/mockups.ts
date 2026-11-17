@@ -55,24 +55,38 @@ export function teeColorKey(name?: string | null): TeeColor | null {
   return null;
 }
 
+export type GarmentBase = "tee" | "cap";
+/** Where customers may place artwork on the front of the cap (500-unit designer space). */
+export const CAP_PRINT_AREA = { x: 175, y: 166, width: 150, height: 90 };
+export const printAreaFor = (base: GarmentBase) => (base === "cap" ? CAP_PRINT_AREA : TEE_PRINT_AREA);
+
+/** Which generated mockup a product uses: tees and caps with no photo of their own do; anything else (or a product with its own photo) does not. */
+export function mockupBase(product: Pick<Product, "category" | "images">): GarmentBase | null {
+  const base = product.category === "T-Shirts" ? "tee" : product.category === "Caps" ? "cap" : null;
+  if (!base) return null;
+  const first = product.images[0];
+  return !first || first.startsWith("/mockups/") ? base : null;
+}
+
 /** True when this product has no photo of its own and should use the generated tee mockups. */
 export function usesTeeMockup(product: Pick<Product, "category" | "images">): boolean {
-  if (product.category !== "T-Shirts") return false;
-  const first = product.images[0];
-  return !first || first.startsWith("/mockups/");
+  return mockupBase(product) === "tee";
 }
 
 export type TeeSide = "front" | "back";
 
-export function teeLayers(color: TeeColor, side: TeeSide = "front") {
-  const b = side === "back" ? "back-" : "";
+export function garmentLayers(base: GarmentBase, color: TeeColor, side: TeeSide = "front") {
+  const name = base === "cap" ? "cap" : "tee";
+  const b = side === "back" && base === "tee" ? "back-" : "";
   return {
-    bare: `/mockups/tee-${b}bare-${color}.png`,
-    shade: `/mockups/tee-${b}shade.png`,
-    light: `/mockups/tee-${b}light.png`,
+    bare: `/mockups/${name}-${b}bare-${color}.png`,
+    shade: `/mockups/${name}-${b}shade.png`,
+    light: `/mockups/${name}-${b}light.png`,
     lightOpacity: LIGHT_OPACITY[color],
   };
 }
+
+export const teeLayers = (color: TeeColor, side: TeeSide = "front") => garmentLayers("tee", color, side);
 
 export function symbolSrc(tone: SymbolTone, color: TeeColor): string {
   const t = tone === "auto" ? AUTO_TONE[color] : tone;
@@ -89,7 +103,8 @@ export function productImage(product: Pick<Product, "category" | "images" | "pre
   }
   const first = product.images[0];
   if (first && !first.startsWith("/mockups/")) return first;
-  if (!usesTeeMockup(product)) return null;
+  const base = mockupBase(product);
+  if (!base) return null;
   const key = teeColorKey(colorName) ?? "white";
-  return `/mockups/tee-${key}${withSymbol ? "-symbol" : ""}.png`;
+  return base === "cap" ? `/mockups/cap-${key}.png` : `/mockups/tee-${key}${withSymbol ? "-symbol" : ""}.png`;
 }

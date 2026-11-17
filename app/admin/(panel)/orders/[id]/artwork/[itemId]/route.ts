@@ -3,7 +3,7 @@
 import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getPrintWidths } from "@/lib/store-data";
-import { dpiFor, pngSize, printSizeFor, withPngDpi } from "@/lib/print-sizes";
+import { dpiFor, pngSize, printSpecFor, withPngDpi } from "@/lib/print-sizes";
 import { logAction } from "@/lib/audit";
 import { UUID_RE } from "../../../shared";
 
@@ -29,7 +29,12 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   let bytes: Uint8Array = new Uint8Array(await upstream.arrayBuffer());
 
   const px = pngSize(bytes);
-  const spec = printSizeFor(item.size, await getPrintWidths());
+  let isCap = false;
+  if (item.product_id) {
+    const { data: prod } = await supabase.from("products").select("category").eq("id", item.product_id).maybeSingle();
+    isCap = prod?.category === "Caps";
+  }
+  const spec = printSpecFor(isCap, item.size, await getPrintWidths());
   if (px && spec) bytes = withPngDpi(bytes, dpiFor(px.width, spec.width));
 
   const reference = String((item.orders as unknown as { reference: string }).reference).replace(/[^A-Za-z0-9-]/g, "");

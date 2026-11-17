@@ -232,8 +232,8 @@ export default function ProductForm({ product, sections }: { product?: Product; 
           <label className="field-group">
             <span className="panel-label">Colours, separated by commas</span>
             <input className="field" name="colors" value={colorsText} onChange={(e) => setColorsText(e.target.value)} placeholder="Black, White, Forest green" />
-            {category === "T-Shirts" && (
-              <div className="option-row" role="group" aria-label="Quick pick tee colours">
+            {(category === "T-Shirts" || category === "Caps") && (
+              <div className="option-row" role="group" aria-label="Quick pick colours">
                 {TEE_COLOR_LIST.map((c) => {
                   const on = colors.some((x) => x.toLowerCase() === c.name.toLowerCase());
                   return (

@@ -543,3 +543,11 @@ input[type="range"] { accent-color: var(--green); }
 .side-switch { display: flex; gap: 0.5rem; margin-bottom: 0.85rem; }
 .product-meta { align-items: flex-end; }
 .thumb-art { background: repeating-conic-gradient(#e7ebe7 0% 25%, #fff 0% 50%) 50% / 14px 14px; }
+.recommended { margin-top: 3.5rem; }
+.recommended h2 { margin-bottom: 1.25rem; }
+.chip-check { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.4rem 0.75rem; border: 1.5px solid var(--line); border-radius: 999px; font-size: 0.9rem; cursor: pointer; background: var(--surface); }
+.chip-check:has(input:checked) { background: var(--mint); border-color: var(--green); }
+.ad-details { border: 1px solid var(--line); border-radius: 12px; padding: 0.75rem 1rem; margin-bottom: 0.6rem; background: var(--surface); }
+.ad-details summary { cursor: pointer; font-weight: 600; }
+.ad-details .option-row { margin-top: 0.75rem; }
+.pdp-offer { margin-top: 1rem; padding: 0.75rem 1rem; border-radius: 12px; background: var(--mint); color: var(--accent); font-size: 0.95rem; }

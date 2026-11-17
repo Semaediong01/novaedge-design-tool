@@ -48,7 +48,8 @@ export async function saveDesignedProduct(input: ProductSaveInput): Promise<Resu
   }
   if (Object.keys(previews).length === 0) return { ok: false, error: "The previews weren't saved. Try again." };
 
-  const preset = { elements, art, previews };
+  const cap = input.base === "cap";
+  const preset = { base: cap ? "cap" : "tee", elements, art, previews };
   const customizable = Boolean(input.customizable);
 
   const { data: existing } = await supabase.from("products").select("id").eq("id", input.id).maybeSingle();
@@ -59,8 +60,8 @@ export async function saveDesignedProduct(input: ProductSaveInput): Promise<Resu
   } else {
     const { data: last } = await supabase.from("products").select("sort_order").order("sort_order", { ascending: false }).limit(1).maybeSingle();
     const { error } = await supabase.from("products").insert({
-      id: input.id, title, description, category: "T-Shirts", price,
-      images: [], sizes: ["S", "M", "L", "XL", "XXL"], colors, customizable, in_stock: true, active: true,
+      id: input.id, title, description, category: cap ? "Caps" : "T-Shirts", price,
+      images: [], sizes: cap ? ["One size"] : ["S", "M", "L", "XL", "XXL"], colors, customizable, in_stock: true, active: true,
       sort_order: Math.min(100000, Number(last?.sort_order ?? 0) + 1), preset,
     });
     if (error) return { ok: false, error: "Couldn't save. Has the latest SQL been run in Supabase?" };

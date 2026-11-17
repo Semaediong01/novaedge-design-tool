@@ -101,3 +101,42 @@ export function commissionFor(lines: PricedLine[], shares: number[], affiliate: 
   });
   return { perLine, total: money(perLine.reduce((s, n) => s + n, 0)) };
 }
+
+export type BundleRule = {
+  id: string;
+  trigger_product_id: string;
+  target_product_id: string;
+  type: "percent" | "fixed";
+  value: number;
+  label: string;
+  active: boolean;
+};
+
+/**
+ * Bundle offers: "buy product A and get product B cheaper". Every unit of the trigger product in the cart
+ * lets one unit of the target product have the discount. Returns each line's share of the saving.
+ */
+export function bundleDiscounts(lines: PricedLine[], rules: BundleRule[]) {
+  const shares = lines.map(() => 0);
+  const used = lines.map(() => 0);
+  const applied: { label: string; amount: number }[] = [];
+  for (const rule of rules) {
+    if (!rule.active || rule.trigger_product_id === rule.target_product_id) continue;
+    let enabled = lines.filter((l) => l.productId === rule.trigger_product_id).reduce((s, l) => s + l.quantity, 0);
+    if (enabled <= 0) continue;
+    let amount = 0;
+    lines.forEach((l, i) => {
+      if (l.productId !== rule.target_product_id) return;
+      const units = Math.min(l.quantity - used[i], enabled);
+      if (units <= 0) return;
+      const per = rule.type === "percent" ? (l.unitPrice * Math.min(100, Math.max(0, rule.value))) / 100 : Math.min(Math.max(0, rule.value), l.unitPrice);
+      const part = money(per * units);
+      shares[i] = money(shares[i] + part);
+      used[i] += units;
+      enabled -= units;
+      amount += part;
+    });
+    if (amount > 0) applied.push({ label: rule.label, amount: money(amount) });
+  }
+  return { shares, amount: money(shares.reduce((s, n) => s + n, 0)), applied };
+}

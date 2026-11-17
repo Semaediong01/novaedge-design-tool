@@ -52,7 +52,7 @@ export async function POST(req: Request) {
       total: priced.total,
       subtotal: priced.subtotal,
       discount_code: priced.discount?.code ?? null,
-      discount_amount: priced.discount?.amount ?? 0,
+      discount_amount: Math.round(((priced.discount?.amount ?? 0) + priced.bundle.amount) * 100) / 100,
       delivery_fee: priced.delivery.fee,
       delivery_zone: priced.delivery.zone,
       affiliate_id: priced.affiliate?.id ?? null,

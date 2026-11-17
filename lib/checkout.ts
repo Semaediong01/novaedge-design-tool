@@ -1,6 +1,7 @@
 // lib/checkout.ts — turns a cart into a trusted order total. Server only (uses the service-role client).
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { commissionFor, deliveryFor, effectivePrice, evaluateDiscount, lineTotal, money, variantSoldOut, type PricedLine } from "@/lib/pricing";
+import { bundleDiscounts, commissionFor, deliveryFor, effectivePrice, evaluateDiscount, lineTotal, money, variantSoldOut, type PricedLine } from "@/lib/pricing";
+import { loadBundleRules } from "@/lib/bundles";
 import { normalizeProduct } from "@/lib/products";
 import { productImage } from "@/lib/mockups";
 import type { Affiliate, DeliveryZone, Discount, Product } from "@/lib/types";
@@ -32,6 +33,7 @@ export type CartPricing =
       subtotal: number;
       discount: { code: string; amount: number } | null;
       discountError: string | null;
+      bundle: { amount: number; applied: { label: string; amount: number }[] };
       delivery: { fee: number; zone: string | null };
       total: number;
       affiliate: Pick<Affiliate, "id" | "code" | "name"> | null;
@@ -134,6 +136,10 @@ export async function priceCart(db: SupabaseClient, opts: Options): Promise<Cart
 
   const subtotal = money(priced.reduce((s, l) => s + l.lineTotal, 0));
 
+  // Bundle offers ("buy A, get B cheaper") come off first; a code then applies to what is left.
+  const bundle = bundleDiscounts(priced, await loadBundleRules(db));
+  const afterBundle = priced.map((l, i) => ({ ...l, unitPrice: money(Math.max(0, l.lineTotal - bundle.shares[i])), quantity: 1 }));
+
   // Discount code
   let discount: { code: string; amount: number } | null = null;
   let discountError: string | null = null;
@@ -141,7 +147,7 @@ export async function priceCart(db: SupabaseClient, opts: Options): Promise<Cart
   const code = text(opts.code, 40).toUpperCase();
   if (code) {
     const { data } = await db.from("discounts").select("*").eq("code", code).maybeSingle();
-    const result = evaluateDiscount((data as Discount | null) ?? null, priced, now);
+    const result = evaluateDiscount((data as Discount | null) ?? null, afterBundle, now);
     if (result.ok) {
       discount = { code: result.code, amount: result.amount };
       shares = result.shares;
@@ -162,20 +168,23 @@ export async function priceCart(db: SupabaseClient, opts: Options): Promise<Cart
     const selfReferral = data?.email && opts.user?.email && String(data.email).toLowerCase() === opts.user.email.toLowerCase();
     if (data && !selfReferral) affiliate = { id: data.id, code: data.code, name: data.name, commission_rate: Number(data.commission_rate) };
   }
-  const commission = commissionFor(priced, shares, affiliate);
+  // Commission and each line's discount share count both the bundle saving and the code.
+  const allShares = shares.map((s, i) => money(s + bundle.shares[i]));
+  const commission = commissionFor(priced, allShares, affiliate);
 
   priced.forEach((l, i) => {
-    l.discountShare = shares[i];
+    l.discountShare = allShares[i];
     l.commission = commission.perLine[i];
   });
 
-  const total = money(subtotal - (discount?.amount ?? 0) + delivery.fee);
+  const total = money(subtotal - bundle.amount - (discount?.amount ?? 0) + delivery.fee);
   return {
     ok: true,
     lines: priced,
     subtotal,
     discount,
     discountError,
+    bundle: { amount: bundle.amount, applied: bundle.applied },
     delivery,
     total,
     affiliate: affiliate ? { id: affiliate.id, code: affiliate.code, name: affiliate.name } : null,

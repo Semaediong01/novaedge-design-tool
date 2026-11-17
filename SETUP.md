@@ -60,3 +60,11 @@ Run all of `supabase/schema.sql` again in the Supabase SQL Editor (safe to re-ru
 ## Create product from a design, and the design library (upgrade)
 
 Run all of `supabase/schema.sql` again in the Supabase SQL Editor (safe to re-run). It adds the `design_library` table and the `preset` column that holds products made from a design. Then: Admin -> Design library to upload artwork for the designer, and Admin -> Products -> Create from a design to put a design on the standby tee and sell it.
+
+## Cap designing, bundle offers and recommended products
+
+No new SQL is needed for these (the latest `supabase/schema.sql` is enough).
+
+- **Caps**: a product in the "Caps" category with no photo of its own uses the built-in cap mockup (9 colours, front print only, 11 × 6.6 cm). Create one from Admin → Products → "Create a cap from a design". Caps stay "Soon" in the shop until you turn that off in Admin → Sections.
+- **Bundle offers** (Admin → Bundle offers): "buy product A, get B cheaper". Applied automatically at checkout, on the server.
+- **Recommended** (Admin → Recommended): the default list and a custom list per product, shown on every product page.

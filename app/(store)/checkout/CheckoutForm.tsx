@@ -13,6 +13,7 @@ type Quote = {
   subtotal: number;
   discount: { code: string; amount: number } | null;
   discountError: string | null;
+  bundle?: { amount: number; applied: { label: string; amount: number }[] };
   delivery: { fee: number; zone: string | null };
   total: number;
 };
@@ -185,6 +186,7 @@ export default function CheckoutForm({ email }: { email: string }) {
           })}
         </ul>
         <div className="summary-row"><span>Subtotal</span><strong>{quote ? naira(quote.subtotal) : "…"}</strong></div>
+        {(quote?.bundle?.applied ?? []).map((b, i) => <div key={i} className="summary-row"><span>{b.label || "Bundle offer"}</span><strong>−{naira(b.amount)}</strong></div>)}
         {quote?.discount && <div className="summary-row"><span>Discount ({quote.discount.code})</span><strong>−{naira(quote.discount.amount)}</strong></div>}
         <div className="summary-row">
           <span>Delivery{quote?.delivery.zone ? ` (${quote.delivery.zone})` : ""}</span>

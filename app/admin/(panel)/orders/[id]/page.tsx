@@ -5,7 +5,7 @@ import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { naira } from "@/lib/format";
 import { getPrintWidths } from "@/lib/store-data";
-import { dpiFor, dpiVerdict, pngSize, printSizeFor } from "@/lib/print-sizes";
+import { dpiFor, dpiVerdict, pngSize, printSpecFor } from "@/lib/print-sizes";
 import TeeFullPreview from "@/components/admin/TeeFullPreview";
 import { FULFILLMENT_STATUSES, type Order } from "@/lib/types";
 import { UUID_RE, fulfillmentTone, paymentTone } from "../shared";
@@ -60,6 +60,9 @@ export default async function AdminOrderDetail({ params, searchParams }: { param
   const items = o.order_items ?? [];
   const sh = o.shipping;
   const widths = await getPrintWidths();
+  const ids = [...new Set(items.map((i) => i.product_id).filter((x): x is string => Boolean(x)))];
+  const { data: cats } = ids.length ? await supabase.from("products").select("id, category").in("id", ids) : { data: [] };
+  const capIds = new Set((cats ?? []).filter((c) => c.category === "Caps").map((c) => c.id as string));
   const pixels = await Promise.all(items.map((i) => artworkPixels(i.production_url)));
 
   const paid = o.payment_status === "paid";
@@ -140,7 +143,8 @@ export default async function AdminOrderDetail({ params, searchParams }: { param
             <tbody>
               {items.map((i, idx) => {
                 const px = pixels[idx];
-                const spec = printSizeFor(i.size, widths);
+                const isCap = Boolean(i.product_id && capIds.has(i.product_id));
+                const spec = printSpecFor(isCap, i.size, widths);
                 const dpi = px && spec ? dpiFor(px.width, spec.width) : null;
                 const verdict = dpi ? dpiVerdict(dpi) : null;
                 const line = Number(i.unit_price) * i.quantity;
@@ -157,8 +161,8 @@ export default async function AdminOrderDetail({ params, searchParams }: { param
                         <div className="ord-art">
                           {(i.production_url || i.print_url) && (
                             <figure className="ord-wide">
-                              <TeeFullPreview color={i.color} artUrl={(i.production_url ?? i.print_url) as string} alt={`${i.title} with the customer's design placed on it`} />
-                              <figcaption>Whole tee: where the design sits</figcaption>
+                              <TeeFullPreview base={isCap ? "cap" : "tee"} color={i.color} artUrl={(i.production_url ?? i.print_url) as string} alt={`${i.title} with the customer's design placed on it`} />
+                              <figcaption>Whole {isCap ? "cap" : "tee"}: where the design sits</figcaption>
                             </figure>
                           )}
                           {i.print_url && (

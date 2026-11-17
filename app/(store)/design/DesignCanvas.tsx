@@ -13,9 +13,9 @@ import { useCart } from "@/components/CartProvider";
 import { naira } from "@/lib/format";
 import { variantSoldOut } from "@/lib/pricing";
 import {
-  MONO_RATIO, SYMBOL_DEFAULT, SYMBOL_MAX, SYMBOL_MIN, TEE_PRINT_AREA,
-  symbolSrc, teeColorHex, teeColorKey, teeLayers,
-  type SymbolTone, type TeeColor,
+  MONO_RATIO, SYMBOL_DEFAULT, SYMBOL_MAX, SYMBOL_MIN, printAreaFor,
+  symbolSrc, teeColorHex, teeColorKey, garmentLayers,
+  type GarmentBase, type SymbolTone, type TeeColor,
 } from "@/lib/mockups";
 import type { LibraryItem } from "@/lib/library";
 import { TEE_COLOR_LIST } from "@/lib/mockups";
@@ -55,6 +55,7 @@ export type TemplateDraft = {
 /** Admin "Create product": a design placed on the standby mockup becomes a product. */
 export type ProductSaveInput = {
   id: string;
+  base: GarmentBase;
   title: string;
   description: string;
   price: number;
@@ -66,6 +67,7 @@ export type ProductSaveInput = {
 };
 export type ProductDraft = {
   id: string | null;
+  base?: GarmentBase;
   title: string;
   description: string;
   price: number;
@@ -80,7 +82,7 @@ type Props = {
   /** mockup = a plain tee drawn from the built-in realistic mockups; otherwise `image` is the admin's photo. `price` is what the customer pays (promo included). */
   product: {
     id: string; title: string; image: string | null; mockup: boolean; price: number; sizes: string[]; colors: string[];
-    symbolDefault?: boolean; allowUploads?: boolean; soldOutVariants?: string[]; backPrice?: number; presetElements?: unknown[];
+    symbolDefault?: boolean; allowUploads?: boolean; soldOutVariants?: string[]; backPrice?: number; presetElements?: unknown[]; base?: GarmentBase;
   };
   initialDesign: { id: string; elements: DesignElement[]; printUrl: string | null; hasBack?: boolean } | null;
   initialSize: string;
@@ -248,12 +250,14 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
   const isTemplateMode = mode === "template" && Boolean(templateDraft);
   const isProductMode = mode === "product" && Boolean(productDraft);
   const isAdminMode = isTemplateMode || isProductMode;
-  const symbolAllowed = product.symbolDefault !== false;
+  const symbolAllowed = product.symbolDefault !== false && (product.base ?? "tee") === "tee";
   const uploadsAllowed = isAdminMode || product.allowUploads !== false;
 
   const isTee = product.mockup;
-  const area: Area = isTee ? TEE_PRINT_AREA : PHOTO_PRINT_AREA;
-  const clampDrag = useMemo(() => makeClamp(area), [isTee]); // eslint-disable-line react-hooks/exhaustive-deps
+  const base: GarmentBase = (isTemplateMode || isProductMode) && productDraft ? (productDraft.base ?? "tee") : (product.base ?? "tee");
+  const isCap = isTee && base === "cap";
+  const area: Area = isTee ? printAreaFor(base) : PHOTO_PRINT_AREA;
+  const clampDrag = useMemo(() => makeClamp(area), [isTee, isCap]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Plain tees open with the small Nova Edge symbol on the chest; the customer can resize, move or remove it.
   const newSymbol = (): SymbolEl => ({ id: newElementId(), type: "symbol", x: SYMBOL_DEFAULT.x, y: SYMBOL_DEFAULT.y, rotation: 0, width: SYMBOL_DEFAULT.width, tone: "auto" });
@@ -599,7 +603,7 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
     upsertDesignLine({
       productId: product.id,
       title: product.title,
-      image: isTee ? `/mockups/tee-${colorKey}${hasSymbol ? "-symbol" : ""}.png` : product.image,
+      image: isCap ? `/mockups/cap-${colorKey}.png` : isTee ? `/mockups/tee-${colorKey}${hasSymbol ? "-symbol" : ""}.png` : product.image,
       price: product.price + (hasBackDesign ? (product.backPrice ?? 0) : 0), // promo-aware price from the page, plus the back print if used
       size,
       color,
@@ -685,7 +689,7 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
           img.src = src;
         });
 
-      const sides: Side[] = ["front", ...(mine.some((el) => sideOf(el) === "back") ? (["back"] as Side[]) : [])];
+      const sides: Side[] = ["front", ...(!isCap && mine.some((el) => sideOf(el) === "back") ? (["back"] as Side[]) : [])];
       const art: { front: string | null; back: string | null } = { front: null, back: null };
       const shots: Partial<Record<Side, HTMLImageElement>> = {};
       for (const sd of sides) {
@@ -707,7 +711,7 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
       for (const key of keys) {
         for (const sd of sides) {
           setSaveStatus(`Making previews (${++done}/${keys.length * sides.length})…`);
-          const layers = teeLayers(key, sd);
+          const layers = garmentLayers(base, key, sd);
           const [bare, shade, light] = await Promise.all([load(layers.bare), load(layers.shade), load(layers.light)]);
           const canvas = document.createElement("canvas");
           canvas.width = 1000; canvas.height = 1000;
@@ -716,7 +720,7 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
           const k = 1000 / LOGICAL_SIZE;
           ctx.drawImage(bare, 0, 0, 1000, 1000);
           const a = shots[sd];
-          if (a) ctx.drawImage(a, TEE_PRINT_AREA.x * k, TEE_PRINT_AREA.y * k, TEE_PRINT_AREA.width * k, TEE_PRINT_AREA.height * k);
+          if (a) ctx.drawImage(a, area.x * k, area.y * k, area.width * k, area.height * k);
           ctx.drawImage(shade, 0, 0, 1000, 1000);
           if (layers.lightOpacity > 0) { ctx.globalAlpha = layers.lightOpacity; ctx.drawImage(light, 0, 0, 1000, 1000); ctx.globalAlpha = 1; }
           const blob: Blob | null = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
@@ -726,7 +730,7 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
       }
 
       setSaveStatus("Saving the product…");
-      const result = await productDraft.save({ id: pid, title, description: pDesc.trim(), price, colors: pColors, customizable: pCustomizable, elements: mine, art, previews });
+      const result = await productDraft.save({ id: pid, base, title, description: pDesc.trim(), price, colors: pColors, customizable: pCustomizable, elements: mine, art, previews });
       if (!result.ok) throw new Error(result.error);
       if (!productId) {
         router.push(`/admin/products/${result.id}?saved=1`); // set promo, affiliate rate and stock there
@@ -844,7 +848,7 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
 
   return (
     <div className="workspace">
-      <h1 className="workspace-title">{isTemplateMode ? (templateId ? "Edit template" : "New template") : isProductMode ? (productId ? "Edit design product" : "Create product from a design") : product.title}</h1>
+      <h1 className="workspace-title">{isTemplateMode ? (templateId ? "Edit template" : "New template") : isProductMode ? (productId ? "Edit design product" : `Create ${isCap ? "cap" : "tee"} from a design`) : product.title}</h1>
 
       {isTemplateMode && templateDraft && (
         <div className="template-meta">
@@ -1110,7 +1114,7 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
         {/* Canvas + properties */}
         <div className="workspace-canvas">
           {soldOut && <p className="form-note" role="status">{color} in {size} is sold out. Pick another size or colour.</p>}
-          {isTee && !isTemplateMode && (
+          {isTee && !isCap && !isTemplateMode && (
             <div className="side-switch" role="group" aria-label="Which side of the tee">
               {(["front", "back"] as Side[]).map((sd) => (
                 <button key={sd} type="button" className={`chip${side === sd ? " active" : ""}`} aria-pressed={side === sd} onClick={() => { setSide(sd); setSelectedId(null); }}>
@@ -1133,8 +1137,8 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
                 onMouseDown={(e) => { if (e.target === e.target.getStage()) setSelectedId(null); }}
               >
                 <Layer>
-                  {(isTee ? (["front", "back"] as Side[]) : (["front"] as Side[])).map((sd) => {
-                    const layers = teeLayers(colorKey, sd);
+                  {(isTee && !isCap ? (["front", "back"] as Side[]) : (["front"] as Side[])).map((sd) => {
+                    const layers = garmentLayers(base, colorKey, sd);
                     return (
                       <Group key={sd} name={`side-${sd}`} visible={side === sd}>
                         {isTee ? <GarmentBackground url={layers.bare} /> : product.image ? <GarmentBackground url={product.image} /> : null}
@@ -1170,7 +1174,7 @@ export default function DesignCanvas({ userId, product, initialDesign, initialSi
             </div>
           </div>
 
-          {isTee && side === "front" && (
+          {isTee && !isCap && side === "front" && (
             <div className="symbol-panel" ref={symbolPanelRef}>
               <div className="symbol-panel-head">
                 <strong>Nova Edge symbol</strong>

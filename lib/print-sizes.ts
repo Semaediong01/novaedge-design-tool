@@ -7,6 +7,9 @@ export const PRINT_RATIO = TEE_PRINT_AREA.height / TEE_PRINT_AREA.width; // heig
 /** Starting widths in cm. These are sensible defaults: confirm them with your printer in Admin -> Print sizes. */
 export const DEFAULT_PRINT_WIDTHS: Record<string, number> = { S: 26, M: 28, L: 30, XL: 32, XXL: 34 };
 
+/** Caps have one print size (the front panel). The designer's cap print area is 150 x 90 units. */
+export const CAP_PRINT_SIZE = { width: 11, height: 6.6 }; // cm
+
 /** Dots per inch we aim for. Below MIN_DPI a print can look soft. */
 export const GOOD_DPI = 150;
 export const MIN_DPI = 100;
@@ -32,6 +35,11 @@ export function printSizeFor(size: string | null | undefined, widths: PrintWidth
   if (!hit) return null;
   const width = widths[hit];
   return { width, height: Math.round(width * PRINT_RATIO * 10) / 10 };
+}
+
+/** Print size for an item: caps have one fixed size, tees follow the garment size. */
+export function printSpecFor(isCap: boolean, size: string | null | undefined, widths: PrintWidths) {
+  return isCap ? CAP_PRINT_SIZE : printSizeFor(size, widths);
 }
 
 export function dpiFor(pixelWidth: number, widthCm: number) {

@@ -25,7 +25,7 @@ export default async function EditDesignProduct({ params }: { params: Promise<{ 
       key={p.id}
       userId={user.id}
       library={library}
-      draft={{ id: p.id, title: p.title, description: p.description, price: p.price, colors: p.colors, customizable: p.customizable, elements: p.preset.elements, save: saveDesignedProduct }}
+      draft={{ id: p.id, base: p.category === "Caps" ? "cap" : "tee", title: p.title, description: p.description, price: p.price, colors: p.colors, customizable: p.customizable, elements: p.preset.elements, save: saveDesignedProduct }}
     />
   );
 }

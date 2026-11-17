@@ -38,6 +38,7 @@ export type Product = {
 
 /** `previews` are keyed by colour key (white, black, ...). `art` is the transparent print artwork per side. */
 export type ProductPreset = {
+  base?: "tee" | "cap";
   elements: unknown[];
   art: { front: string | null; back: string | null };
   previews: Record<string, { front?: string; back?: string }>;

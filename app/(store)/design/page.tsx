@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { getProduct } from "@/lib/products";
 import { createClient } from "@/lib/supabase/server";
-import { usesTeeMockup } from "@/lib/mockups";
+import { mockupBase } from "@/lib/mockups";
 import { effectivePrice } from "@/lib/pricing";
 import { getBackPrintPrice, getTemplates } from "@/lib/store-data";
 import { getLibrary } from "@/lib/library";
@@ -37,7 +37,8 @@ export default async function DesignPage({
   }
 
   const product = await getProduct(productId);
-  const mockup = product ? usesTeeMockup(product) : false;
+  const base = product ? mockupBase(product) : null;
+  const mockup = base !== null;
   if (!product || !product.customizable || (!mockup && !product.images[0])) notFound();
 
   let initialDesign = null;
@@ -79,13 +80,14 @@ export default async function DesignPage({
         title: product.title,
         image: mockup ? null : product.images[0],
         mockup,
+        base: base ?? undefined,
         price: effectivePrice(product),
         sizes: product.sizes,
         colors: product.colors,
         symbolDefault: product.symbol_default,
         allowUploads: product.allow_uploads,
         soldOutVariants: product.sold_out_variants,
-        backPrice: mockup ? await getBackPrintPrice() : 0,
+        backPrice: base === "tee" ? await getBackPrintPrice() : 0,
         presetElements: product.preset?.elements,
       }}
       templates={templates}

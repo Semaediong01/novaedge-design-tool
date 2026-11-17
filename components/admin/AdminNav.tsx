@@ -22,12 +22,14 @@ const GROUPS: { label: string; links: { href: string; label: string }[] }[] = [
       { href: "/admin/templates", label: "Design templates" },
       { href: "/admin/print-sizes", label: "Print sizes" },
       { href: "/admin/library", label: "Design library" },
+      { href: "/admin/recommended", label: "Recommended" },
     ],
   },
   {
     label: "Money",
     links: [
       { href: "/admin/discounts", label: "Discount codes" },
+      { href: "/admin/bundles", label: "Bundle offers" },
       { href: "/admin/affiliates", label: "Affiliates" },
       { href: "/admin/delivery", label: "Delivery" },
       { href: "/admin/reports", label: "Reports" },

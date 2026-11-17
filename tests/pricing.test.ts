@@ -1,7 +1,7 @@
 // Run with: npx tsx tests/pricing.test.ts  (Node 22+)
 import type { Discount } from "@/lib/types";
 import assert from "node:assert/strict";
-import { promoActive, effectivePrice, variantSoldOut, evaluateDiscount, deliveryFor, commissionFor } from "../lib/pricing";
+import { promoActive, effectivePrice, variantSoldOut, evaluateDiscount, bundleDiscounts, deliveryFor, commissionFor } from "../lib/pricing";
 
 const now = new Date("2026-11-01T12:00:00Z");
 const base = { price: 15000, promo_price: null, promo_starts_at: null, promo_ends_at: null, promo_label: null };
@@ -65,5 +65,22 @@ const c = commissionFor(lines, shares, aff);
 assert.deepEqual(c.perLine, [2160, 900]); // (20000-2000)*12% ; (5000-500)*20%
 assert.equal(c.total, 3060);
 assert.equal(commissionFor(lines, shares, null).total, 0);
+
+// bundle offers: buy A, get B cheaper
+{
+  const A = "aaaaaaaa-0000-4000-8000-000000000001", B = "bbbbbbbb-0000-4000-8000-000000000002";
+  const rule = (o: object) => ({ id: "r", trigger_product_id: A, target_product_id: B, type: "percent" as const, value: 10, label: "Pair deal", active: true, ...o });
+  const mk = (id: string, unitPrice: number, quantity: number) => ({ productId: id, unitPrice, quantity, affiliateRate: null });
+  const b = bundleDiscounts([mk(A, 10000, 1), mk(B, 5000, 1)], [rule({})]);
+  assert.equal(b.amount, 500);
+  assert.deepEqual(b.shares, [0, 500]);
+  assert.equal(bundleDiscounts([mk(B, 5000, 1)], [rule({})]).amount, 0, "no trigger, no discount");
+  assert.equal(bundleDiscounts([mk(A, 10000, 1)], [rule({})]).amount, 0, "no target, no discount");
+  assert.equal(bundleDiscounts([mk(A, 10000, 1), mk(B, 5000, 3)], [rule({})]).amount, 500, "one trigger unit = one discounted unit");
+  assert.equal(bundleDiscounts([mk(A, 10000, 2), mk(B, 5000, 3)], [rule({})]).amount, 1000);
+  assert.equal(bundleDiscounts([mk(A, 10000, 1), mk(B, 1000, 1)], [rule({ type: "fixed", value: 4000 })]).amount, 1000, "fixed discount never goes below zero");
+  assert.equal(bundleDiscounts([mk(A, 10000, 1), mk(B, 5000, 1)], [rule({ active: false })]).amount, 0);
+  assert.equal(bundleDiscounts([mk(A, 10000, 1), mk(B, 5000, 1)], [rule({ target_product_id: A })]).amount, 0, "a product can't discount itself");
+}
 
 console.log("pricing tests passed");

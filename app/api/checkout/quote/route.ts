@@ -25,6 +25,7 @@ export async function POST(req: Request) {
     subtotal: result.subtotal,
     discount: result.discount,
     discountError: result.discountError,
+    bundle: result.bundle,
     delivery: result.delivery,
     total: result.total,
   });

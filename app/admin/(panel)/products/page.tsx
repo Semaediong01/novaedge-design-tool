@@ -55,7 +55,8 @@ export default async function AdminProducts({ searchParams }: { searchParams: Pr
           <p>{all.length} product{all.length === 1 ? "" : "s"}. Use the buttons on each row for quick changes, or open a product to edit everything.</p>
         </div>
         <div className="ad-actions">
-          <Link href="/admin/products/from-design" className="btn">Create from a design</Link>
+          <Link href="/admin/products/from-design" className="btn">Create a tee from a design</Link>
+          <Link href="/admin/products/from-design?base=cap" className="btn">Create a cap from a design</Link>
           <Link href="/admin/products/new" className="btn btn-ghost">Add product</Link>
         </div>
       </div>

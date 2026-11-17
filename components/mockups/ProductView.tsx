@@ -3,14 +3,15 @@
 
 import { useState } from "react";
 import { naira } from "@/lib/format";
-import { productImage, teeColorKey, usesTeeMockup } from "@/lib/mockups";
+import { mockupBase, productImage, teeColorKey } from "@/lib/mockups";
 import ProductActions from "@/components/ProductActions";
 import { effectivePrice, promoActive } from "@/lib/pricing";
 import type { Product } from "@/lib/types";
 
 export default function ProductView({ product }: { product: Product }) {
   const [color, setColor] = useState(product.colors[0] ?? "");
-  const tee = usesTeeMockup(product);
+  const base = mockupBase(product);
+  const tee = base === "tee";
 
   // Generated tees: one view with the symbol, one without. Uploaded photos: the admin's own gallery.
   const preset = product.preset?.previews;
@@ -20,6 +21,8 @@ export default function ProductView({ product }: { product: Product }) {
         ...(own.front ? [{ src: own.front, label: `${product.title}, ${color}, front` }] : []),
         ...(own.back ? [{ src: own.back, label: `${product.title}, ${color}, back` }] : []),
       ]
+    : base === "cap"
+    ? [{ src: productImage(product, color), label: `${product.title}, ${color}` }]
     : tee
     ? [
         { src: productImage(product, color, true), label: `${product.title}, ${color} with the Nova Edge symbol` },

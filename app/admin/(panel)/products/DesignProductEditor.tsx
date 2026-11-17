@@ -13,7 +13,7 @@ export default function DesignProductEditor({ userId, draft, library }: { userId
       <DesignCanvas
         mode="product"
         userId={userId}
-        product={{ id: "design-product", title: "Product", image: null, mockup: true, price: 0, sizes: [], colors: TEE_COLOR_NAMES, symbolDefault: false, allowUploads: true, soldOutVariants: [] }}
+        product={{ id: "design-product", title: "Product", image: null, mockup: true, base: draft.base ?? "tee", price: 0, sizes: [], colors: TEE_COLOR_NAMES, symbolDefault: false, allowUploads: true, soldOutVariants: [] }}
         initialDesign={null}
         initialSize=""
         initialColor="White"
