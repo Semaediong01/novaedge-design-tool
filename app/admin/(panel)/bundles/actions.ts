@@ -21,8 +21,17 @@ async function writeRules(rules: BundleRule[]) {
 }
 
 export async function addBundleRule(formData: FormData) {
+  return saveBundleRule(formData);
+}
+
+export async function updateBundleRule(formData: FormData) {
+  return saveBundleRule(formData);
+}
+
+async function saveBundleRule(formData: FormData) {
   const user = await requireAdmin();
   const supabase = await createClient();
+  const editId = String(formData.get("id") ?? "");
   const trigger = String(formData.get("trigger") ?? "");
   const target = String(formData.get("target") ?? "");
   const type = formData.get("type") === "fixed" ? "fixed" : "percent";
@@ -36,10 +45,13 @@ export async function addBundleRule(formData: FormData) {
   if (value > 10_000_000) back("error", "That amount is too large.");
 
   const rules = await loadBundleRules(supabase, { all: true });
-  if (rules.length >= 50) back("error", "That's the most offers allowed. Remove one first.");
-  const rule: BundleRule = { id: crypto.randomUUID(), trigger_product_id: trigger, target_product_id: target, type, value, label, active: true };
-  if (!(await writeRules(cleanRules({ rules: [...rules, rule] })))) back("error", "Couldn't save. Try again.");
-  await logAction(user, "bundle.create", "site_settings", rule.id, { trigger, target, type, value });
+  const existing = editId ? rules.find((r) => r.id === editId) : undefined;
+  if (editId && !existing) back("error", "That offer no longer exists.");
+  if (!existing && rules.length >= 50) back("error", "That's the most offers allowed. Remove one first.");
+  const rule: BundleRule = { id: existing?.id ?? crypto.randomUUID(), trigger_product_id: trigger, target_product_id: target, type, value, label, active: existing?.active ?? true };
+  const next = existing ? rules.map((r) => (r.id === rule.id ? rule : r)) : [...rules, rule];
+  if (!(await writeRules(cleanRules({ rules: next })))) back("error", "Couldn't save. Try again.");
+  await logAction(user, existing ? "bundle.update" : "bundle.create", "site_settings", rule.id, { trigger, target, type, value });
   back("saved");
 }
 

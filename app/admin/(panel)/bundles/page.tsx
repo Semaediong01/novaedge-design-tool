@@ -5,11 +5,12 @@ import { naira } from "@/lib/format";
 import { loadBundleRules } from "@/lib/bundles";
 import { normalizeProduct } from "@/lib/products";
 import ConfirmButton from "../products/ConfirmButton";
-import { addBundleRule, deleteBundleRule, toggleBundleRule } from "./actions";
+import Link from "next/link";
+import { addBundleRule, deleteBundleRule, toggleBundleRule, updateBundleRule } from "./actions";
 
 export const metadata = { title: "Bundle offers · Admin · Nova Edge" };
 
-export default async function AdminBundles({ searchParams }: { searchParams: Promise<{ saved?: string; error?: string }> }) {
+export default async function AdminBundles({ searchParams }: { searchParams: Promise<{ saved?: string; error?: string; edit?: string }> }) {
   await requireAdmin();
   const sp = await searchParams;
   const supabase = await createClient();
@@ -18,6 +19,7 @@ export default async function AdminBundles({ searchParams }: { searchParams: Pro
     loadBundleRules(supabase, { all: true }),
   ]);
   const products = (data ?? []).map((r) => normalizeProduct(r));
+  const editing = sp.edit ? rules.find((r) => r.id === sp.edit) : undefined;
   const name = (id: string) => products.find((p) => p.id === id)?.title ?? "(removed product)";
 
   return (
@@ -34,41 +36,43 @@ export default async function AdminBundles({ searchParams }: { searchParams: Pro
       {products.length < 2 ? (
         <p className="empty-state">Add at least two products to make a bundle offer.</p>
       ) : (
-        <form action={addBundleRule} className="ad-form">
-          <h2>New offer</h2>
+        <form key={editing?.id ?? "new"} action={editing ? updateBundleRule : addBundleRule} className="ad-form">
+          {editing && <input type="hidden" name="id" value={editing.id} />}
+          <h2>{editing ? "Edit offer" : "New offer"}</h2>
           <div className="option-row">
             <label className="field-group">
               <span className="panel-label">When the customer buys</span>
-              <select className="field" name="trigger" required defaultValue="">
+              <select className="field" name="trigger" required defaultValue={editing?.trigger_product_id ?? ""}>
                 <option value="" disabled>Choose a product</option>
                 {products.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
               </select>
             </label>
             <label className="field-group">
               <span className="panel-label">This product gets cheaper</span>
-              <select className="field" name="target" required defaultValue="">
+              <select className="field" name="target" required defaultValue={editing?.target_product_id ?? ""}>
                 <option value="" disabled>Choose a product</option>
                 {products.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
               </select>
             </label>
             <label className="field-group">
               <span className="panel-label">Discount type</span>
-              <select className="field" name="type" defaultValue="percent">
+              <select className="field" name="type" defaultValue={editing?.type ?? "percent"}>
                 <option value="percent">Percent off (%)</option>
                 <option value="fixed">Naira off (₦)</option>
               </select>
             </label>
             <label className="field-group">
               <span className="panel-label">Amount</span>
-              <input className="field" name="value" type="number" step="any" min="0" required style={{ width: "110px" }} />
+              <input className="field" name="value" type="number" step="any" min="0" required defaultValue={editing?.value} style={{ width: "110px" }} />
             </label>
             <label className="field-group grow">
               <span className="panel-label">Shown to customers at checkout</span>
-              <input className="field" name="label" type="text" maxLength={80} placeholder="e.g. Pair it and save" />
+              <input className="field" name="label" type="text" maxLength={80} defaultValue={editing?.label ?? ""} placeholder="e.g. Pair it and save" />
             </label>
           </div>
           <div className="ad-actions">
-            <button type="submit" className="btn">Add offer</button>
+            <button type="submit" className="btn">{editing ? "Save changes" : "Add offer"}</button>
+            {editing && <Link href="/admin/bundles" className="btn btn-ghost">Cancel</Link>}
           </div>
         </form>
       )}
@@ -86,6 +90,7 @@ export default async function AdminBundles({ searchParams }: { searchParams: Pro
                 <span className={`ad-badge ${r.active ? "ok" : ""}`}>{r.active ? "On" : "Off"}</span>
               </div>
               <div className="ad-actions">
+                <Link href={`/admin/bundles?edit=${r.id}`} className="btn btn-ghost btn-xs">Edit</Link>
                 <form action={toggleBundleRule}>
                   <input type="hidden" name="id" value={r.id} />
                   <button type="submit" className="btn btn-ghost btn-xs">{r.active ? "Turn off" : "Turn on"}</button>
